@@ -1,8 +1,8 @@
 Source: ffmpeg
 Section: video
 Priority: optional
-Maintainer: Deepin Developer <deepin-dev@deepin.org>
-Uploaders: Deepin Packages Builder <packages@deepin.org>
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Uploaders:
  Reinhard Tartler <siretart@tauware.de>,
  Balint Reczey <balint@balintreczey.hu>,
  James Cowgill <jcowgill@debian.org>,
@@ -10,8 +10,8 @@ Uploaders: Deepin Packages Builder <packages@deepin.org>
 Rules-Requires-Root: no
 Homepage: https://ffmpeg.org/
 Standards-Version: 4.6.0
-#Vcs-Git
-#Vcs-Browser
+Vcs-Git: https://salsa.debian.org/multimedia-team/ffmpeg.git
+Vcs-Browser: https://salsa.debian.org/multimedia-team/ffmpeg
 Build-Depends-Indep:
 # needed to minify the CSS files
  cleancss,
@@ -23,7 +23,7 @@ Build-Depends-Indep:
  tree,
 Build-Depends:
 # autodetected: hwaccels 'cuda_llvm'
- clang,
+ clang [amd64 arm64 i386 ppc64el],
  debhelper-compat (= 13),
 # --enable-libflite
  flite1-dev,
@@ -57,6 +57,8 @@ Build-Depends:
  libdc1394-dev [linux-any],
 # --enable-libdrm
  libdrm-dev [linux-any],
+# autodected: ffnvcodec
+ libffmpeg-nvenc-dev [amd64 arm64 i386],
 # --enable-libfontconfig
  libfontconfig-dev,
 # --enable-libfreetype
@@ -233,6 +235,10 @@ Multi-Arch: same
 Depends:
  ${shlibs:Depends},
  ${misc:Depends}
+Suggests:
+ libcuda1 [amd64 arm64 i386],
+ libnvcuvid1 [amd64 arm64 i386],
+ libnvidia-encode1 [amd64 arm64 i386],
 Description: FFmpeg library with de/encoders for audio/video codecs - runtime files
  FFmpeg is the leading multimedia framework, able to decode, encode, transcode,
  mux, demux, stream, filter and play pretty much anything that humans and
@@ -258,6 +264,10 @@ Provides: libavcodec58 (= ${binary:Version})
 Depends:
  ${shlibs:Depends},
  ${misc:Depends}
+Suggests:
+ libcuda1 [amd64 arm64 i386],
+ libnvcuvid1 [amd64 arm64 i386],
+ libnvidia-encode1 [amd64 arm64 i386],
 Description: FFmpeg library with additional de/encoders for audio/video codecs
  FFmpeg is the leading multimedia framework, able to decode, encode, transcode,
  mux, demux, stream, filter and play pretty much anything that humans and
