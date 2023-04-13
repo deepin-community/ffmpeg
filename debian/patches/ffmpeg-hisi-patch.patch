@@ -12550,6 +12550,7 @@ Index: ffmpeg/libavcodec/bellagio/utils.h
 +#include "internal.h"
 +#include "bytestream.h"
 +#include "HW_OMX_Core.h"
++#include "OMX_Core.h"
 +
 +#include "omx_dec_wrapper.h"
 +#include "omx_dec_common.h"
@@ -12557,6 +12558,67 @@ Index: ffmpeg/libavcodec/bellagio/utils.h
 +#define MIN_HEVCC_SIZE 23
 +#define NALU_HEADER_SIZE 4
 +
++static void h264_annexb_get(AVCodecContext *avctx,const AVBSFContext *ctx)
++{
++    OMXCodecContext *s1 = avctx->priv_data;
++    H264ExtradataContext *s = &s1->extradata_context.h264;
++    int32_t err;
++    uint8_t *out = NULL;
++
++    err = av_reallocp(&out,ctx->par_in->extradata_size);
++    if(err < 0){
++        AV_LOGE("av_reallocp,ret=%d",err);
++        return;
++    }
++    memcpy(out,ctx->par_in->extradata,ctx->par_in->extradata_size);
++    s->annexb_buffer = out;
++    s->annexb_buffer_size = ctx->par_in->extradata_size;
++    AV_LOGD("s->annexb_buffer_size:%d",s->annexb_buffer_size);
++}
+
++static uint8_t h264_annexb_type(AVCodecContext *avctx,const uint8_t *buf)
++{
++    uint8_t unit_type;
++    uint8_t idx;
++    for(idx = 0; idx < 4; ++idx){
++        if((idx == 2 || idx == 3) && buf[idx] != 0x00){
++            break;
++        }
++    }
++
++    unit_type = buf[idx +1] & 0x1f;
++    AV_LOGD("val=0x%x,idx=%u,unit_type=0x%x",buf[idx +1],idx +1,unit_type);
++
++    return unit_type;
++}
++
++static void h264_annexb_AUD(AVCodecContext *avctx,const AVPacket *avpkt,HW_OMX_BUFFERHEADERTYPE *out)
++{
++    uint8_t idx;
++    int len;
++
++    for (idx = 0; idx < avpkt->size; ++idx){
++        if((idx ==2 || idx == 3) && (avpkt->data[idx] == 0x01)){
++            break;
++        }
++    }
++
++    len = idx + 3;
++    memcpy(out_>pBuffer, avpkt->data +len, avpkt->size -len);
++    out_>nFilledLen = avpkt->size -len;
++    AV_LOGD("idx=%u, data len before=%d, after=%d", idx + 1, avpkt->size,out->nFilledLen);
++
++    return;
++}
++
++static void h264_annexb_copy(AVCodecContext *avctx. const AVPacket *avpkt, HW_OMX_BUFFERHEADERTYPE *out)
++{
++    OMXCodecContext *s1 = avctx->priv_data;
++    H264ExtradataContext *s = &s1->extradata_context.h264;
++    memcpy(out->pBuffer, s->annexb_buffer, s->annexb_buffer_size);
++    memcpy(out->pBuffer + s->annexb_buffer_size, avpkt->data, avpkt->size);
++    out->nFilledLen = avpkt->size + s->annexb_buffer_size;
++}
 +static int32_t hevc_extradata_to_annexb(AVCodecContext *avctx)
 +{
 +    OMXCodecContext *s1 = avctx->priv_data;
@@ -12896,6 +12958,11 @@ Index: ffmpeg/libavcodec/bellagio/utils.h
 +    if (!extra_size || (extra_size >= 3 && AV_RB24(ctx->par_in->extradata) == 1) || // 3: Start stream length
 +        (extra_size >= 4 && AV_RB32(ctx->par_in->extradata) == 1)) {                // 4: Start stream length
 +        AV_LOGD("The input looks like it is Annex B already");
++        if(extra_size == 0){
++            AV_LOGD("no extradata");
++            return 0;
++        }
++        h264_annexb_get(avctx,ctx);
 +    } else if (extra_size >= 6) { // 6: no Start stream length
 +        ret = h264_extradata_to_annexb(avctx, AV_INPUT_BUFFER_PADDING_SIZE);
 +        if (ret < 0) {
@@ -13057,8 +13124,18 @@ Index: ffmpeg/libavcodec/bellagio/utils.h
 +    out->nFilledLen = 0;
 +    /* nothing to filter */
 +    if (!s->extradata_parsed) {
-+        memcpy(out->pBuffer, in->data, in->size);
-+        out->nFilledLen = in->size;
++        unit_type = h264_annexb_type(avctx, in->data);
++        if(unit_type == H264_NAL_IDR_SLICE){
++            AV_LOGD("unit_type H264_NAL_IDR_SLICE");
++            h264_annexb_copy(avctx,avpkt,out);
++        } else if(unit_type == H264_NAL_AUD){
++            AV_LOGD("unit_type H264_NAL_AUD");
++            h264_annexb_AUD(avctx,avpkt,out);
++        }else{
++            memcpy(out->pBuffer, in->data, in->size);
++            out->nFilledLen = in->size;
++            AV_LOGD("extradata_parased false");
++        }
 +        return 0;
 +    }
 +    buf = in->data;
