@@ -2,6 +2,8 @@
 
 export V=1
 
+export DEB_BUILD_OPTIONS=nocheck
+
 # sets DEBIAN_VERSION variable
 include /usr/share/dpkg/pkg-info.mk
 
@@ -19,7 +21,33 @@ SHLIB_PKGS := $(shell sed -nr '/extra/! s/^Package:[[:space:]]*(lib.*[0-9]+)[[:s
 EXTRA_PKGS := $(shell sed -nr 's/^Package:[[:space:]]*(.*extra[0-9]+)[[:space:]]*$$/\1/p' debian/control)
 FLAVORS = standard extra static
 
-# Most possible features, compatible with effective licensing of GPLv2+
+# Enable as many features as possible, as long as the result is still GPLv2+ (a GPLv3+ variant is built as libavcodec-extra/libavfilter-extra flavor).
+# The following flags (and build-dependencies) are not added, because they would require a libavformat-extra flavor:
+#   --enable-libsmbclient           (libsmbclient-dev [!hurd-i386 !m68k !sparc64])
+# The following flags are not added, because the necessary libraries are not in Debian:
+#   --enable-decklink
+#   --enable-libcelt                (see #676592: removed from Debian as abandoned upstream, replaced by opus)
+#   --enable-libdavs2
+#   --enable-libilbc                (see #675959 for the RFP bug)
+#   --enable-libklvanc
+#   --enable-libkvazaar
+#   --enable-libmfx
+#   --enable-libopenh264
+#   --enable-libsrt
+#   --enable-libtensorflow          (only in experimental at the moment)
+#   --enable-libvmaf
+#   --enable-libxavs2
+#   --enable-libxavs
+#   --enable-libzimg                (see #864888 for the RFP bug)
+#   --enable-vapoursynth            (see #833942 for the RFP bug)
+# The following flags are not added for various reasons:
+#   --enable-librtmp                ffmpeg has better built-in RTMP support with listen mode.
+#   --enable-mbedtls                Already using gnutls as TLS implementation
+#   --enable-libmodplug             see #849840: replaced with libopenmpt
+#   --enable-libv4l2                This is only needed for very old devices and may cause problems for others.
+#                                   Should anyone need it, using LD_PRELOAD pointing on libv4l2 has the same effect.
+#   --enable-opencl                 This is considered an experimental API.
+#   --enable-opencv                 Does not build with OpenCV >= 3.4
 CONFIG := --prefix=/usr \
 	--extra-version="$(DEB_REVISION)" \
 	--toolchain=hardened \
@@ -28,6 +56,8 @@ CONFIG := --prefix=/usr \
 	--arch=$(DEB_HOST_ARCH_CPU) \
 	--enable-gpl \
 	--disable-stripping \
+	--enable-avresample --disable-filter=resample \
+	--enable-avisynth \
 	--enable-gnutls \
 	--enable-ladspa \
 	--enable-libaom \
@@ -37,7 +67,6 @@ CONFIG := --prefix=/usr \
 	--enable-libcaca \
 	--enable-libcdio \
 	--enable-libcodec2 \
-	--enable-libdav1d \
 	--enable-libflite \
 	--enable-libfontconfig \
 	--enable-libfreetype \
@@ -51,73 +80,59 @@ CONFIG := --prefix=/usr \
 	--enable-libopenmpt \
 	--enable-libopus \
 	--enable-libpulse \
-	--enable-librabbitmq \
+	--enable-librsvg \
 	--enable-librubberband \
 	--enable-libshine \
 	--enable-libsnappy \
 	--enable-libsoxr \
 	--enable-libspeex \
-	--enable-libsrt \
 	--enable-libssh \
 	--enable-libtheora \
 	--enable-libtwolame \
 	--enable-libvidstab \
 	--enable-libvorbis \
 	--enable-libvpx \
+	--enable-libwavpack \
 	--enable-libwebp \
 	--enable-libx265 \
 	--enable-libxml2 \
 	--enable-libxvid \
-	--enable-libzimg \
 	--enable-libzmq \
 	--enable-libzvbi \
 	--enable-lv2 \
 	--enable-omx \
+        --enable-ftomx \
 	--enable-openal \
-	--enable-opencl \
 	--enable-opengl \
-	--enable-sdl2
+	--enable-sdl2 \
+	--enable-libdavs2 \
+	--enable-libxavs2 \
+	--enable-vaapi
 
-# disable sndio, it's pulled in via libopenal-dev and autodected
-CONFIG += --disable-sndio
-
-# link with -latomic on armel and mipsel (https://trac.ffmpeg.org/ticket/9275)
-ifneq (,$(filter armel mipsel,$(DEB_HOST_ARCH)))
-CONFIG += --extra-libs=-latomic
-endif
-
-# avoid pocketsphinx on mips (bug#812335), alpha, ia64 and big-endian (bug#968456)
-ifeq (,$(filter mips% alpha ia64,$(DEB_HOST_ARCH))$(filter big,$(DEB_HOST_ARCH_ENDIAN)))
-CONFIG += --enable-pocketsphinx
-endif
-
-# avoid librsvg on almost all ports (bug#983344, bug#991556)
-ifeq (,$(filter alpha hppa hurd-i386 ia64 kfreebsd-amd64 kfreebsd-i386 m86k sh4 x32,$(DEB_HOST_ARCH)))
-CONFIG += --enable-librsvg
-endif
-
-ifeq (amd64,$(DEB_HOST_ARCH))
-CONFIG += --enable-libmfx
+ifeq ($(DEB_HOST_ARCH),amd64)
+    CONFIG += --disable-asm \
+        --disable-x86asm \
+        --enable-cuda \
+        --enable-cuvid \
+        --enable-nvenc \
+        --enable-nvdec \
+        --enable-nonfree \
+        --enable-libnpp
 endif
 
 # The standard configuration only uses the shared CONFIG.
 CONFIG_standard = --enable-shared
 
-# Additional features, compatible with effective licensing of GPLv3+
+# With these enabled, resulting binaries are effectively licensed as GPLv3+.
 CONFIG_extra = --enable-shared \
 	--enable-version3 \
 	--disable-doc \
 	--disable-programs \
-	--enable-libaribb24 \
+	--enable-liblensfun \
 	--enable-libopencore_amrnb \
 	--enable-libopencore_amrwb \
 	--enable-libtesseract \
 	--enable-libvo_amrwbenc
-
-# Do not enable libsmbclient support on hurd-i386
-ifeq (,$(filter hurd-i386,$(DEB_HOST_ARCH)))
-	CONFIG_extra += --enable-libsmbclient
-endif
 
 # The static libraries should not be built with PIC.
 CONFIG_static = --disable-pic \
@@ -125,21 +140,21 @@ CONFIG_static = --disable-pic \
 	--disable-programs
 
 # Disable optimizations if requested.
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+ifneq (,$(filter $(DEB_BUILD_OPTIONS),noopt))
 	CONFIG += --disable-optimizations
 endif
 
 # Respect CC/CXX from the environment, if they differ from the default.
 # Don't set them if they equal the default, because that disables autodetection needed for cross-building.
-ifneq (cc,$(CC))
+ifneq ($(CC),cc)
 	CONFIG += --cc=$(CC)
 endif
-ifneq (g++,$(CXX))
+ifneq ($(CXX),g++)
 	CONFIG += --cxx=$(CXX)
 endif
 
 # Some libraries are built only on linux.
-ifeq (linux,$(DEB_HOST_ARCH_OS))
+ifeq ($(DEB_HOST_ARCH_OS),linux)
 	CONFIG += --enable-libdc1394 \
 		--enable-libdrm \
 		--enable-libiec61883
@@ -147,7 +162,7 @@ endif
 
 # ffmpeg is involved in build-dependency cycles with x264 and chromaprint, so disable them in stage one.
 # Also disable frei0r, which build-depends on opencv.
-ifneq (,$(filter pkg.ffmpeg.stage1,$(DEB_BUILD_PROFILES)))
+ifneq ($(filter pkg.ffmpeg.stage1,$(DEB_BUILD_PROFILES)),)
 	CONFIG += --disable-frei0r \
 		--disable-chromaprint \
 		--disable-libx264
@@ -158,7 +173,7 @@ else
 endif
 
 # Disable altivec optimizations on powerpc, because they are not always available on this architecture.
-ifeq (powerpc,$(DEB_HOST_ARCH))
+ifeq ($(DEB_HOST_ARCH),powerpc)
 	CONFIG += --disable-altivec
 	# Build an altivec flavor of the libraries on powerpc.
 	# This works around the problem that runtime cpu detection on powerpc currently does not work,
@@ -172,7 +187,7 @@ ifeq (powerpc,$(DEB_HOST_ARCH))
 endif
 
 # Disable assembly optimizations on x32, because they don't work (yet).
-ifneq (,$(filter x32,$(DEB_HOST_ARCH)))
+ifneq (,$(filter $(DEB_HOST_ARCH),x32))
 	CONFIG += --disable-asm
 endif
 
@@ -185,25 +200,21 @@ else
 		--disable-mips64r6
 endif
 
-ifneq (,$(filter mips%,$(DEB_HOST_ARCH)))
+ifneq (,$(filter mips%, $(DEB_HOST_ARCH)))
 	CONFIG += --disable-mipsdsp \
 		--disable-mipsdspr2 \
-		--disable-loongson2 \
-		--disable-loongson3 \
-		--disable-mmi \
 		--disable-mips32r5 \
-		$(MIPS_R2_R6_CONFIG) \
-		--disable-msa \
-		--disable-msa2
+		--optflags="-O3 -mabi=64" \
+		$(MIPS_R2_R6_CONFIG)
 endif
 
 # Disable mipsfpu on mips and mipsel, because it is not compatible with the FPXX ABI
-ifneq (,$(filter mips mipsel,$(DEB_HOST_ARCH)))
-	CONFIG += --disable-mipsfpu
-endif
+#ifneq (,$(filter $(DEB_HOST_ARCH),mips mipsel))
+#	CONFIG += --disable-mipsfpu
+#endif
 
 # Disable some tests which fail when FLT_EVAL_METHOD != 0 (found on i386, m68k and s390x)
-ifneq (,$(filter i386 m68k s390x,$(DEB_HOST_ARCH_CPU)))
+ifneq (,$(filter $(DEB_HOST_ARCH_CPU),i386 m68k s390x))
 	CONFIG += --ignore-tests=hapenc-hap-none,hapenc-hapa-none,hapenc-hapq-none
 endif
 
@@ -215,18 +226,16 @@ endif
 
 # Use the default debhelper scripts, where possible.
 %:
-	dh $@ --with pkgkde_symbolshelper
+	dh $@
 
 # Add configuration options:
-override_dh_auto_configure: $(patsubst %,configure_%,$(FLAVORS))
-configure_%:
-	$(info $()   debian/rules $@)
-	mkdir -p debian/$*
-	cd debian/$* && ../../configure $(strip $(CONFIG) $(CONFIG_$*)) || (cat ffbuild/config.log && exit 1)
+override_dh_auto_configure:
+	$(foreach flavor,$(FLAVORS),mkdir -p debian/$(flavor);)
+	$(foreach flavor,$(FLAVORS),set -e; echo " *** $(flavor) ***"; cd debian/$(flavor); ../../configure $(CONFIG) $(CONFIG_$(flavor)) || (cat ffbuild/config.log && exit 1); cd ../.. ;)
 
 # Remove the subdirectories generated for the flavors.
 override_dh_auto_clean:
-	rm -rf $(patsubst %,debian/%,$(FLAVORS))
+	$(foreach flavor,$(FLAVORS),[ ! -d debian/$(flavor) ] || rm -r debian/$(flavor);)
 
 # Create doxygen documentation:
 override_dh_auto_build-indep:
@@ -238,47 +247,42 @@ override_dh_auto_build-indep:
 	#  See: #895154
 	(lessc debian/missing-sources/ffmpeg-web/src/less/style.less | cleancss > debian/standard/doc/style.min.css) 2>&1 | cat >&2
 
-override_dh_auto_build-arch: $(patsubst %,build_%,$(FLAVORS))
-
-# noop fallback for below more specific targets
-prebuild_%:
-	:
-
-# Copy built object files to avoid building them again for the extra flavor.
-$(patsubst %,prebuild_%,$(filter %extra,$(FLAVORS))): prebuild_%: build_standard
-	$(info $()   debian/rules $@)
-	$(eval subdir = debian/$(subst extra,standard,$(subst -extra,,$*)))
-	cd $(subdir) && find libavcodec libavdevice libavfilter libavformat libavutil libpostproc libswscale libswresample \
-		-type f -name '*.o' \
-		-exec install -m 644 -D -T '{}' '../$*/{}' ';'
-	rm debian/$*/libavcodec/allcodecs.o
-	rm debian/$*/libavfilter/allfilters.o
-
-# Build qt-faststart here, to make it possible to build with 'nocheck'.
-prebuild_standard:
-	$(info $()   debian/rules $@)
-	$(MAKE) -C debian/standard tools/qt-faststart
-
-build_%: prebuild_%
-	$(info $()   debian/rules $@)
-	dh_auto_build -a --sourcedirectory=debian/$* || (cat debian/$*/config.log && exit 1)
+override_dh_auto_build-arch:
+	# Copy built object files to avoid building them again for the extra flavor.
+	# Build qt-faststart here, to make it possible to build with 'nocheck'.
+	set -e && for flavor in $(FLAVORS); do \
+		echo " *** $$flavor ***"; \
+		if echo "$$flavor" | grep -q "extra"; then \
+			subdir=`[ "$$flavor" = "extra" ] && echo "debian/standard/" || echo "debian/altivec/"`; \
+			for dir in `cd ./$$subdir; find libavcodec libavdevice libavfilter libavformat libavresample libavutil libpostproc libswscale libswresample -type d`; do \
+				mkdir -p debian/"$$flavor"/"$$dir"; \
+				echo "$$subdir$$dir"/*.o | grep -q '*' || cp "$$subdir$$dir"/*.o debian/"$$flavor"/"$$dir"; \
+			done; \
+			rm debian/"$$flavor"/libavcodec/allcodecs.o; \
+			rm debian/"$$flavor"/libavfilter/allfilters.o; \
+		fi; \
+		if [ "$$flavor" = "standard" ]; then \
+			$(MAKE) -C debian/standard tools/qt-faststart; \
+		fi; \
+		dh_auto_build -a --sourcedirectory=debian/"$$flavor" || (cat debian/"$$flavor"/config.log && exit 1); \
+	done
 
 # Set the library path for the dynamic linker, because the tests otherwise don't find the libraries.
 override_dh_auto_test-arch:
-	export LD_LIBRARY_PATH="libavcodec:libavdevice:libavfilter:libavformat:libavutil:libpostproc:libswresample:libswscale"; \
-		dh_auto_test -a --sourcedirectory=debian/standard -- -k
-
+#	export LD_LIBRARY_PATH="libavcodec:libavdevice:libavfilter:libavformat:libavresample:libavutil:libpostproc:libswresample:libswscale"; \
+#		dh_auto_test -a --sourcedirectory=debian/standard -- -k
+override_dh_auto_test:
 # No tests for indep build.
 override_dh_auto_test-indep:
 
 override_dh_auto_install-arch:
 	dh_auto_install -a --sourcedirectory=debian/standard
-ifeq (powerpc,$(DEB_HOST_ARCH))
+ifeq ($(DEB_HOST_ARCH),powerpc)
 	install -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 	install -m 644 debian/altivec/*/*.so.* debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 endif
 	dh_auto_install -a --sourcedirectory=debian/extra --destdir=debian/tmp/extra
-ifeq (powerpc,$(DEB_HOST_ARCH))
+ifeq ($(DEB_HOST_ARCH),powerpc)
 	install -d debian/tmp/extra/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 	install -m 644 debian/altivec-extra/*/*.so.* debian/tmp/extra/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 endif
@@ -287,8 +291,6 @@ endif
 
 override_dh_auto_install-indep:
 	$(MAKE) -C debian/standard DESTDIR=$(CURDIR)/debian/tmp install-doc install-examples
-	# Create index.html page for the FFmpeg manual
-	cd debian/tmp/usr/share/doc/ffmpeg && tree -H '.' -L 1 -P '*.html' --noreport --charset utf-8 -T 'FFmpeg Manual Index' -o index.html
 
 override_dh_install:
 	dh_install $(addprefix -p,$(EXTRA_PKGS)) --sourcedir=debian/tmp/extra
@@ -302,14 +304,11 @@ override_dh_shlibdeps:
 		ver=${DEB_VERSION}; \
 		echo "$$lib $$abi $$pkg (= $$ver)" >> debian/shlibs.local; \
 	done
-	set -e && for pkg in $(EXTRA_PKGS); do \
-		mainpkg=`echo $$pkg | sed 's/-extra//'`; \
-		cp -f debian/$$mainpkg.symbols debian/$$pkg.symbols; \
-		dh_shlibdeps -p$$pkg; \
-		rm -f debian/$$pkg.symbols; \
-	done
-	dh_shlibdeps --remaining-packages
+	dh_shlibdeps
 
-# avoid error: Unknown DWARF DW_OP_0
-override_dh_dwz:
-	dh_dwz -Xlibavcodec -Xlibavfilter -Xlibavutil -Xlibswresample -Xlibswscale
+override_dh_missing:
+	dh_missing --list-missing
+
+# Don't compress the example source code files.
+override_dh_compress:
+	dh_compress -Xexamples

@@ -24,7 +24,6 @@
  */
 
 #include "libavutil/avassert.h"
-#include "libavutil/mem_internal.h"
 #include "libavutil/opt.h"
 #include "libavutil/pixdesc.h"
 #include "libavutil/pixfmt.h"
@@ -171,6 +170,78 @@ typedef struct ColorSpaceContext {
 // FIXME dithering if bitdepth goes down?
 // FIXME bitexact for fate integration?
 
+static const double ycgco_matrix[3][3] =
+{
+    {  0.25, 0.5,  0.25 },
+    { -0.25, 0.5, -0.25 },
+    {  0.5,  0,   -0.5  },
+};
+
+static const double gbr_matrix[3][3] =
+{
+    { 0,    1,   0   },
+    { 0,   -0.5, 0.5 },
+    { 0.5, -0.5, 0   },
+};
+
+/*
+ * All constants explained in e.g. https://linuxtv.org/downloads/v4l-dvb-apis/ch02s06.html
+ * The older ones (bt470bg/m) are also explained in their respective ITU docs
+ * (e.g. https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.470-5-199802-S!!PDF-E.pdf)
+ * whereas the newer ones can typically be copied directly from wikipedia :)
+ */
+static const struct LumaCoefficients luma_coefficients[AVCOL_SPC_NB] = {
+    [AVCOL_SPC_FCC]        = { 0.30,   0.59,   0.11   },
+    [AVCOL_SPC_BT470BG]    = { 0.299,  0.587,  0.114  },
+    [AVCOL_SPC_SMPTE170M]  = { 0.299,  0.587,  0.114  },
+    [AVCOL_SPC_BT709]      = { 0.2126, 0.7152, 0.0722 },
+    [AVCOL_SPC_SMPTE240M]  = { 0.212,  0.701,  0.087  },
+    [AVCOL_SPC_YCOCG]      = { 0.25,   0.5,    0.25   },
+    [AVCOL_SPC_RGB]        = { 1,      1,      1      },
+    [AVCOL_SPC_BT2020_NCL] = { 0.2627, 0.6780, 0.0593 },
+    [AVCOL_SPC_BT2020_CL]  = { 0.2627, 0.6780, 0.0593 },
+};
+
+static const struct LumaCoefficients *get_luma_coefficients(enum AVColorSpace csp)
+{
+    const struct LumaCoefficients *coeffs;
+
+    if (csp >= AVCOL_SPC_NB)
+        return NULL;
+    coeffs = &luma_coefficients[csp];
+    if (!coeffs->cr)
+        return NULL;
+
+    return coeffs;
+}
+
+static void fill_rgb2yuv_table(const struct LumaCoefficients *coeffs,
+                               double rgb2yuv[3][3])
+{
+    double bscale, rscale;
+
+    // special ycgco matrix
+    if (coeffs->cr == 0.25 && coeffs->cg == 0.5 && coeffs->cb == 0.25) {
+        memcpy(rgb2yuv, ycgco_matrix, sizeof(double) * 9);
+        return;
+    } else if (coeffs->cr == 1 && coeffs->cg == 1 && coeffs->cb == 1) {
+        memcpy(rgb2yuv, gbr_matrix, sizeof(double) * 9);
+        return;
+    }
+
+    rgb2yuv[0][0] = coeffs->cr;
+    rgb2yuv[0][1] = coeffs->cg;
+    rgb2yuv[0][2] = coeffs->cb;
+    bscale = 0.5 / (coeffs->cb - 1.0);
+    rscale = 0.5 / (coeffs->cr - 1.0);
+    rgb2yuv[1][0] = bscale * coeffs->cr;
+    rgb2yuv[1][1] = bscale * coeffs->cg;
+    rgb2yuv[1][2] = 0.5;
+    rgb2yuv[2][0] = 0.5;
+    rgb2yuv[2][1] = rscale * coeffs->cg;
+    rgb2yuv[2][2] = rscale * coeffs->cb;
+}
+
 // FIXME I'm pretty sure gamma22/28 also have a linear toe slope, but I can't
 // find any actual tables that document their real values...
 // See http://www.13thmonkey.org/~boris/gammacorrection/ first graph why it matters
@@ -180,7 +251,6 @@ static const struct TransferCharacteristics transfer_characteristics[AVCOL_TRC_N
     [AVCOL_TRC_GAMMA28]   = { 1.0,    0.0,    1.0 / 2.8, 0.0 },
     [AVCOL_TRC_SMPTE170M] = { 1.099,  0.018,  0.45, 4.5 },
     [AVCOL_TRC_SMPTE240M] = { 1.1115, 0.0228, 0.45, 4.0 },
-    [AVCOL_TRC_LINEAR]    = { 1.0,    0.0,    1.0,  0.0 },
     [AVCOL_TRC_IEC61966_2_1] = { 1.055, 0.0031308, 1.0 / 2.4, 12.92 },
     [AVCOL_TRC_IEC61966_2_4] = { 1.099, 0.018, 0.45, 4.5 },
     [AVCOL_TRC_BT2020_10] = { 1.099,  0.018,  0.45, 4.5 },
@@ -262,9 +332,9 @@ static int fill_gamma_table(ColorSpaceContext *s)
         s->delin_lut[n] = av_clip_int16(lrint(d * 28672.0));
 
         // linearize
-        if (v <= -in_beta * in_delta) {
+        if (v <= -in_beta) {
             l = -pow((1.0 - in_alpha - v) * in_ialpha, in_igamma);
-        } else if (v < in_beta * in_delta) {
+        } else if (v < in_beta) {
             l = v * in_idelta;
         } else {
             l = pow((v + in_alpha - 1.0) * in_ialpha, in_igamma);
@@ -333,15 +403,15 @@ static void apply_lut(int16_t *buf[3], ptrdiff_t stride,
     }
 }
 
-typedef struct ThreadData {
+struct ThreadData {
     AVFrame *in, *out;
     ptrdiff_t in_linesize[3], out_linesize[3];
     int in_ss_h, out_ss_h;
-} ThreadData;
+};
 
 static int convert(AVFilterContext *ctx, void *data, int job_nr, int n_jobs)
 {
-    const ThreadData *td = data;
+    struct ThreadData *td = data;
     ColorSpaceContext *s = ctx->priv;
     uint8_t *in_data[3], *out_data[3];
     int16_t *rgb[3];
@@ -599,7 +669,7 @@ static int create_filtergraph(AVFilterContext *ctx,
         s->in_rng = in->color_range;
         if (s->user_irng != AVCOL_RANGE_UNSPECIFIED)
             s->in_rng = s->user_irng;
-        s->in_lumacoef = ff_get_luma_coefficients(s->in_csp);
+        s->in_lumacoef = get_luma_coefficients(s->in_csp);
         if (!s->in_lumacoef) {
             av_log(ctx, AV_LOG_ERROR,
                    "Unsupported input colorspace %d (%s)\n",
@@ -612,7 +682,7 @@ static int create_filtergraph(AVFilterContext *ctx,
     if (!s->out_lumacoef) {
         s->out_csp = out->colorspace;
         s->out_rng = out->color_range;
-        s->out_lumacoef = ff_get_luma_coefficients(s->out_csp);
+        s->out_lumacoef = get_luma_coefficients(s->out_csp);
         if (!s->out_lumacoef) {
             if (s->out_csp == AVCOL_SPC_UNSPECIFIED) {
                 if (s->user_all == CS_UNSPECIFIED) {
@@ -654,7 +724,7 @@ static int create_filtergraph(AVFilterContext *ctx,
             }
             for (n = 0; n < 8; n++)
                 s->yuv_offset[0][n] = off;
-            ff_fill_rgb2yuv_table(s->in_lumacoef, rgb2yuv);
+            fill_rgb2yuv_table(s->in_lumacoef, rgb2yuv);
             ff_matrix_invert_3x3(rgb2yuv, yuv2rgb);
             bits = 1 << (in_desc->comp[0].depth - 1);
             for (n = 0; n < 3; n++) {
@@ -687,7 +757,7 @@ static int create_filtergraph(AVFilterContext *ctx,
             }
             for (n = 0; n < 8; n++)
                 s->yuv_offset[1][n] = off;
-            ff_fill_rgb2yuv_table(s->out_lumacoef, rgb2yuv);
+            fill_rgb2yuv_table(s->out_lumacoef, rgb2yuv);
             bits = 1 << (29 - out_desc->comp[0].depth);
             for (out_rng = s->out_y_rng, n = 0; n < 3; n++, out_rng = s->out_uv_rng) {
                 for (m = 0; m < 3; m++) {
@@ -734,7 +804,7 @@ static int create_filtergraph(AVFilterContext *ctx,
     return 0;
 }
 
-static av_cold int init(AVFilterContext *ctx)
+static int init(AVFilterContext *ctx)
 {
     ColorSpaceContext *s = ctx->priv;
 
@@ -773,7 +843,7 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
     int res;
     ptrdiff_t rgb_stride = FFALIGN(in->width * sizeof(int16_t), 32);
     unsigned rgb_sz = rgb_stride * in->height;
-    ThreadData td;
+    struct ThreadData td;
 
     if (!out) {
         av_frame_free(&in);
@@ -782,7 +852,6 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
     res = av_frame_copy_props(out, in);
     if (res < 0) {
         av_frame_free(&in);
-        av_frame_free(&out);
         return res;
     }
 
@@ -842,18 +911,13 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
             !s->dither_scratch_base[1][0] || !s->dither_scratch_base[1][1] ||
             !s->dither_scratch_base[2][0] || !s->dither_scratch_base[2][1]) {
             uninit(ctx);
-            av_frame_free(&in);
-            av_frame_free(&out);
             return AVERROR(ENOMEM);
         }
         s->rgb_sz = rgb_sz;
     }
     res = create_filtergraph(ctx, in, out);
-    if (res < 0) {
-        av_frame_free(&in);
-        av_frame_free(&out);
+    if (res < 0)
         return res;
-    }
     s->rgb_stride = rgb_stride / sizeof(int16_t);
     td.in = in;
     td.out = out;
@@ -867,11 +931,8 @@ static int filter_frame(AVFilterLink *link, AVFrame *in)
     td.out_ss_h = av_pix_fmt_desc_get(out->format)->log2_chroma_h;
     if (s->yuv2yuv_passthrough) {
         res = av_frame_copy(out, in);
-        if (res < 0) {
-            av_frame_free(&in);
-            av_frame_free(&out);
+        if (res < 0)
             return res;
-        }
     } else {
         ctx->internal->execute(ctx, convert, &td, NULL,
                                FFMIN((in->height + 1) >> 1, ff_filter_get_nb_threads(ctx)));
@@ -898,7 +959,7 @@ static int query_formats(AVFilterContext *ctx)
         return AVERROR(ENOMEM);
     if (s->user_format == AV_PIX_FMT_NONE)
         return ff_set_common_formats(ctx, formats);
-    res = ff_formats_ref(formats, &ctx->inputs[0]->outcfg.formats);
+    res = ff_formats_ref(formats, &ctx->inputs[0]->out_formats);
     if (res < 0)
         return res;
     formats = NULL;
@@ -906,7 +967,7 @@ static int query_formats(AVFilterContext *ctx)
     if (res < 0)
         return res;
 
-    return ff_formats_ref(formats, &ctx->outputs[0]->incfg.formats);
+    return ff_formats_ref(formats, &ctx->outputs[0]->in_formats);
 }
 
 static int config_props(AVFilterLink *outlink)
@@ -980,7 +1041,6 @@ static const AVOption colorspace_options[] = {
     ENUM("smpte432",     AVCOL_PRI_SMPTE432,   "prm"),
     ENUM("bt2020",       AVCOL_PRI_BT2020,     "prm"),
     ENUM("jedec-p22",    AVCOL_PRI_JEDEC_P22,  "prm"),
-    ENUM("ebu3213",      AVCOL_PRI_EBU3213,    "prm"),
 
     { "trc",        "Output transfer characteristics",
       OFFSET(user_trc),   AV_OPT_TYPE_INT, { .i64 = AVCOL_TRC_UNSPECIFIED },
@@ -992,7 +1052,6 @@ static const AVOption colorspace_options[] = {
     ENUM("gamma28",      AVCOL_TRC_GAMMA28,      "trc"),
     ENUM("smpte170m",    AVCOL_TRC_SMPTE170M,    "trc"),
     ENUM("smpte240m",    AVCOL_TRC_SMPTE240M,    "trc"),
-    ENUM("linear",       AVCOL_TRC_LINEAR,       "trc"),
     ENUM("srgb",         AVCOL_TRC_IEC61966_2_1, "trc"),
     ENUM("iec61966-2-1", AVCOL_TRC_IEC61966_2_1, "trc"),
     ENUM("xvycc",        AVCOL_TRC_IEC61966_2_4, "trc"),

@@ -422,6 +422,17 @@ static int decode_header(SnowContext *s){
     return 0;
 }
 
+static av_cold int decode_init(AVCodecContext *avctx)
+{
+    int ret;
+
+    if ((ret = ff_snow_common_init(avctx)) < 0) {
+        return ret;
+    }
+
+    return 0;
+}
+
 static int decode_blocks(SnowContext *s){
     int x, y;
     int w= s->b_width;
@@ -493,17 +504,9 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
                s->spatial_decomposition_count
               );
 
-    if (s->avctx->export_side_data & AV_CODEC_EXPORT_DATA_MVS) {
-        size_t size;
-        res = av_size_mult(s->b_width * s->b_height, sizeof(AVMotionVector) << (s->block_max_depth*2), &size);
-        if (res)
-            return res;
-        av_fast_malloc(&s->avmv, &s->avmv_size, size);
-        if (!s->avmv)
-            return AVERROR(ENOMEM);
-    } else {
-        s->avmv_size = 0;
-        av_freep(&s->avmv);
+    av_assert0(!s->avmv);
+    if (s->avctx->flags2 & AV_CODEC_FLAG2_EXPORT_MVS) {
+        s->avmv = av_malloc_array(s->b_width * s->b_height, sizeof(AVMotionVector) << (s->block_max_depth*2));
     }
     s->avmv_index = 0;
 
@@ -632,6 +635,8 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
         memcpy(sd->data, s->avmv, s->avmv_index * sizeof(AVMotionVector));
     }
 
+    av_freep(&s->avmv);
+
     if (res < 0)
         return res;
 
@@ -651,9 +656,6 @@ static av_cold int decode_end(AVCodecContext *avctx)
 
     ff_snow_common_end(s);
 
-    s->avmv_size = 0;
-    av_freep(&s->avmv);
-
     return 0;
 }
 
@@ -663,7 +665,7 @@ AVCodec ff_snow_decoder = {
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_SNOW,
     .priv_data_size = sizeof(SnowContext),
-    .init           = ff_snow_common_init,
+    .init           = decode_init,
     .close          = decode_end,
     .decode         = decode_frame,
     .capabilities   = AV_CODEC_CAP_DR1 /*| AV_CODEC_CAP_DRAW_HORIZ_BAND*/,

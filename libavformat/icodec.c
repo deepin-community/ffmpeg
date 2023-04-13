@@ -43,7 +43,7 @@ typedef struct {
     IcoImage * images;
 } IcoDemuxContext;
 
-static int probe(const AVProbeData *p)
+static int probe(AVProbeData *p)
 {
     unsigned i, frames, checked = 0;
 
@@ -190,6 +190,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
         bytestream_put_le32(&buf, 0);
 
         if ((ret = avio_read(pb, buf, image->size)) != image->size) {
+            av_packet_unref(pkt);
             return ret < 0 ? ret : AVERROR_INVALIDDATA;
         }
 

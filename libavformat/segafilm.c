@@ -40,8 +40,8 @@
 
 typedef struct film_sample {
   int stream;
-  unsigned int sample_size;
   int64_t sample_offset;
+  unsigned int sample_size;
   int64_t pts;
   int keyframe;
 } film_sample;
@@ -64,7 +64,7 @@ typedef struct FilmDemuxContext {
     unsigned int version;
 } FilmDemuxContext;
 
-static int film_probe(const AVProbeData *p)
+static int film_probe(AVProbeData *p)
 {
     if (AV_RB32(&p->buf[0]) != FILM_TAG)
         return 0;

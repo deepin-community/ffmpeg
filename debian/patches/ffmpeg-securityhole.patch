@@ -1,0 +1,94 @@
+diff --git a/libavcodec/avpacket.c b/libavcodec/avpacket.c
+index e160ad3..33541bf 100644
+--- a/libavcodec/avpacket.c
++++ b/libavcodec/avpacket.c
+@@ -522,7 +522,7 @@ fail:
+ 
+ int av_packet_unpack_dictionary(const uint8_t *data, int size, AVDictionary **dict)
+ {
+-    const uint8_t *end = data + size;
++    const uint8_t *end = data?(data + size):data;
+     int ret = 0;
+ 
+     if (!dict || !data || !size)
+diff --git a/libavcodec/eac3dec.c b/libavcodec/eac3dec.c
+index 73067de..d806810 100644
+--- a/libavcodec/eac3dec.c
++++ b/libavcodec/eac3dec.c
+@@ -148,8 +148,10 @@ static void ff_eac3_apply_spectral_extension(AC3DecodeContext *s)
+ #endif
+             for (i = 0; i < s->spx_band_sizes[bnd]; i++) {
+                 float noise  = nscale * (int32_t)av_lfg_get(&s->dith_state);
+-                s->transform_coeffs[ch][bin]   *= sscale;
+-                s->transform_coeffs[ch][bin++] += noise;
++                if((ch>=0 && ch < AC3_MAX_CHANNELS) && (bin>=0 && bin < AC3_MAX_COEFS)) {
++                    s->transform_coeffs[ch][bin]   *= sscale;
++                    s->transform_coeffs[ch][bin++] += noise;
++                }
+             }
+         }
+     }
+diff --git a/libavformat/jacosubdec.c b/libavformat/jacosubdec.c
+index 3037085..0b9b1ad 100644
+--- a/libavformat/jacosubdec.c
++++ b/libavformat/jacosubdec.c
+@@ -106,7 +106,7 @@ static const char *read_ts(JACOsubContext *jacosub, const char *buf,
+     int len;
+     unsigned hs, ms, ss, fs; // hours, minutes, seconds, frame start
+     unsigned he, me, se, fe; // hours, minutes, seconds, frame end
+-    int ts_start, ts_end;
++    int64_t ts_start, ts_end;
+ 
+     /* timed format */
+     if (sscanf(buf, "%u:%u:%u.%u %u:%u:%u.%u %n",
+@@ -124,8 +124,8 @@ static const char *read_ts(JACOsubContext *jacosub, const char *buf,
+     return NULL;
+ 
+ shift_and_ret:
+-    ts_start  = (ts_start + jacosub->shift) * 100 / jacosub->timeres;
+-    ts_end    = (ts_end   + jacosub->shift) * 100 / jacosub->timeres;
++    ts_start  = (ts_start + jacosub->shift) * 100UL / jacosub->timeres;
++    ts_end    = (ts_end   + jacosub->shift) * 100UL / jacosub->timeres;
+     *start    = ts_start;
+     *duration = ts_start + ts_end;
+     return buf + len;
+diff --git a/libavformat/subtitles.c b/libavformat/subtitles.c
+index bbc4e3e..7b9bbf3 100644
+--- a/libavformat/subtitles.c
++++ b/libavformat/subtitles.c
+@@ -211,7 +211,7 @@ void ff_subtitles_queue_finalize(void *log_ctx, FFDemuxSubtitlesQueue *q)
+ 
+ int ff_subtitles_queue_read_packet(FFDemuxSubtitlesQueue *q, AVPacket *pkt)
+ {
+-    AVPacket *sub = q->subs + q->current_sub_idx;
++    AVPacket *sub = q->subs?(q->subs + q->current_sub_idx):q->subs;
+ 
+     if (q->current_sub_idx == q->nb_subs)
+         return AVERROR_EOF;
+diff --git a/libavformat/tty.c b/libavformat/tty.c
+index 60f7e9f..068e6b7 100644
+--- a/libavformat/tty.c
++++ b/libavformat/tty.c
+@@ -55,7 +55,9 @@ static int read_probe(const AVProbeData *p)
+ 
+     for (int i = 0; i < p->buf_size; i++)
+         cnt += !!isansicode(p->buf[i]);
+-
++    if(p->buf_size == 0) {
++        return 0;
++    }
+     return (cnt * 100LL / p->buf_size) * (cnt > 400) *
+         !!av_match_ext(p->filename, tty_extensions);
+ }
+diff --git a/libavformat/utils.c b/libavformat/utils.c
+index a33f8f9..f4423ac 100644
+--- a/libavformat/utils.c
++++ b/libavformat/utils.c
+@@ -1474,6 +1474,7 @@ static int parse_packet(AVFormatContext *s, AVPacket *pkt, int stream_index)
+         pkt->pts = pkt->dts = AV_NOPTS_VALUE;
+         pkt->pos = -1;
+         /* increment read pointer */
++        if(!data) goto fail;
+         data += len;
+         size -= len;
+ 

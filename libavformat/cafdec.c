@@ -48,7 +48,7 @@ typedef struct CafContext {
     int64_t data_size;              ///< raw data size, in bytes
 } CafContext;
 
-static int probe(const AVProbeData *p)
+static int probe(AVProbeData *p)
 {
     if (AV_RB32(p->buf) == MKBETAG('c','a','f','f') && AV_RB16(&p->buf[4]) == 1)
         return AVPROBE_SCORE_MAX;
@@ -103,7 +103,6 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
 {
     AVIOContext *pb = s->pb;
     AVStream *st      = s->streams[0];
-    int ret;
 
     if (size < 0 || size > INT_MAX - AV_INPUT_BUFFER_PADDING_SIZE)
         return -1;
@@ -138,8 +137,9 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
             return AVERROR_INVALIDDATA;
         }
 
-        if ((ret = ff_alloc_extradata(st->codecpar, ALAC_HEADER)) < 0)
-            return ret;
+        av_freep(&st->codecpar->extradata);
+        if (ff_alloc_extradata(st->codecpar, ALAC_HEADER))
+            return AVERROR(ENOMEM);
 
         /* For the old style cookie, we skip 12 bytes, then read 36 bytes.
          * The new style cookie only contains the last 24 bytes of what was
@@ -177,8 +177,10 @@ static int read_kuki_chunk(AVFormatContext *s, int64_t size)
             return AVERROR_PATCHWELCOME;
         }
         avio_skip(pb, size);
-    } else if ((ret = ff_get_extradata(s, st->codecpar, pb, size)) < 0) {
-        return ret;
+    } else {
+        av_freep(&st->codecpar->extradata);
+        if (ff_get_extradata(s, st->codecpar, pb, size) < 0)
+            return AVERROR(ENOMEM);
     }
 
     return 0;
@@ -323,8 +325,6 @@ static int read_header(AVFormatContext *s)
                    "skipping CAF chunk: %08"PRIX32" (%s), size %"PRId64"\n",
                    tag, av_fourcc2str(av_bswap32(tag)), size);
         case MKBETAG('f','r','e','e'):
-            if (size < 0 && found_data)
-                goto found_data;
             if (size < 0)
                 return AVERROR_INVALIDDATA;
             break;
@@ -340,7 +340,6 @@ static int read_header(AVFormatContext *s)
     if (!found_data)
         return AVERROR_INVALIDDATA;
 
-found_data:
     if (caf->bytes_per_packet > 0 && caf->frames_per_packet > 0) {
         if (caf->data_size > 0)
             st->nb_frames = (caf->data_size / caf->bytes_per_packet) * caf->frames_per_packet;
@@ -467,5 +466,5 @@ AVInputFormat ff_caf_demuxer = {
     .read_header    = read_header,
     .read_packet    = read_packet,
     .read_seek      = read_seek,
-    .codec_tag      = ff_caf_codec_tags_list,
+    .codec_tag      = (const AVCodecTag* const []){ ff_codec_caf_tags, 0 },
 };

@@ -52,7 +52,7 @@ typedef struct LXFDemuxContext {
     uint32_t video_format, packet_type, extended_size;
 } LXFDemuxContext;
 
-static int lxf_probe(const AVProbeData *p)
+static int lxf_probe(AVProbeData *p)
 {
     if (!memcmp(p->buf, LXF_IDENT, LXF_IDENT_LENGTH))
         return AVPROBE_SCORE_MAX;
@@ -318,6 +318,7 @@ static int lxf_read_packet(AVFormatContext *s, AVPacket *pkt)
         return ret2;
 
     if ((ret2 = avio_read(pb, pkt->data, ret)) != ret) {
+        av_packet_unref(pkt);
         return ret2 < 0 ? ret2 : AVERROR_EOF;
     }
 

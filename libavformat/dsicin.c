@@ -60,7 +60,7 @@ typedef struct CinDemuxContext {
 } CinDemuxContext;
 
 
-static int cin_probe(const AVProbeData *p)
+static int cin_probe(AVProbeData *p)
 {
     /* header starts with this special marker */
     if (AV_RL32(&p->buf[0]) != 0x55AA0000)
@@ -203,6 +203,7 @@ static int cin_read_packet(AVFormatContext *s, AVPacket *pkt)
 
         ret = avio_read(pb, &pkt->data[4], pkt_size);
         if (ret < 0) {
+            av_packet_unref(pkt);
             return ret;
         }
         if (ret < pkt_size)

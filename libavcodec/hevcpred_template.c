@@ -214,7 +214,7 @@ do {                                  \
                 while (j < size_max_x && !IS_INTRA(j, -1))
                     j++;
                 if (j > 0)
-                    if (cand_up_left) {
+                    if (x0 > 0) {
                         EXTEND_LEFT_CIP(top, j, j + 1);
                     } else {
                         EXTEND_LEFT_CIP(top, j, j);

@@ -46,7 +46,6 @@ static int pnm_decode_frame(AVCodecContext *avctx, void *data,
     int i, j, k, n, linesize, h, upgrade = 0, is_mono = 0;
     unsigned char *ptr;
     int components, sample_len, ret;
-    float scale;
 
     s->bytestream_start =
     s->bytestream       = (uint8_t *)buf;
@@ -144,7 +143,7 @@ static int pnm_decode_frame(AVCodecContext *avctx, void *data,
                         v = (*s->bytestream++)&1;
                     } else {
                         /* read a sequence of digits */
-                        for (k = 0; k < 6 && c <= 9; k += 1) {
+                        for (k = 0; k < 5 && c <= 9; k += 1) {
                             v = 10*v + c;
                             c = (*s->bytestream++) - '0';
                         }
@@ -255,72 +254,6 @@ static int pnm_decode_frame(AVCodecContext *avctx, void *data,
             }
         }
         break;
-    case AV_PIX_FMT_GBRPF32:
-        if (avctx->width * avctx->height * 12 > s->bytestream_end - s->bytestream)
-            return AVERROR_INVALIDDATA;
-        scale = 1.f / s->scale;
-        if (s->endian) {
-            float *r, *g, *b;
-
-            r = (float *)p->data[2];
-            g = (float *)p->data[0];
-            b = (float *)p->data[1];
-            for (int i = 0; i < avctx->height; i++) {
-                for (int j = 0; j < avctx->width; j++) {
-                    r[j] = av_int2float(AV_RL32(s->bytestream+0)) * scale;
-                    g[j] = av_int2float(AV_RL32(s->bytestream+4)) * scale;
-                    b[j] = av_int2float(AV_RL32(s->bytestream+8)) * scale;
-                    s->bytestream += 12;
-                }
-
-                r += p->linesize[2] / 4;
-                g += p->linesize[0] / 4;
-                b += p->linesize[1] / 4;
-            }
-        } else {
-            float *r, *g, *b;
-
-            r = (float *)p->data[2];
-            g = (float *)p->data[0];
-            b = (float *)p->data[1];
-            for (int i = 0; i < avctx->height; i++) {
-                for (int j = 0; j < avctx->width; j++) {
-                    r[j] = av_int2float(AV_RB32(s->bytestream+0)) * scale;
-                    g[j] = av_int2float(AV_RB32(s->bytestream+4)) * scale;
-                    b[j] = av_int2float(AV_RB32(s->bytestream+8)) * scale;
-                    s->bytestream += 12;
-                }
-
-                r += p->linesize[2] / 4;
-                g += p->linesize[0] / 4;
-                b += p->linesize[1] / 4;
-            }
-        }
-        break;
-    case AV_PIX_FMT_GRAYF32:
-        if (avctx->width * avctx->height * 4 > s->bytestream_end - s->bytestream)
-            return AVERROR_INVALIDDATA;
-        scale = 1.f / s->scale;
-        if (s->endian) {
-            float *g = (float *)p->data[0];
-            for (int i = 0; i < avctx->height; i++) {
-                for (int j = 0; j < avctx->width; j++) {
-                    g[j] = av_int2float(AV_RL32(s->bytestream)) * scale;
-                    s->bytestream += 4;
-                }
-                g += p->linesize[0] / 4;
-            }
-        } else {
-            float *g = (float *)p->data[0];
-            for (int i = 0; i < avctx->height; i++) {
-                for (int j = 0; j < avctx->width; j++) {
-                    g[j] = av_int2float(AV_RB32(s->bytestream)) * scale;
-                    s->bytestream += 4;
-                }
-                g += p->linesize[0] / 4;
-            }
-        }
-        break;
     }
     *got_frame = 1;
 
@@ -382,18 +315,6 @@ AVCodec ff_pam_decoder = {
     .long_name      = NULL_IF_CONFIG_SMALL("PAM (Portable AnyMap) image"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_PAM,
-    .priv_data_size = sizeof(PNMContext),
-    .decode         = pnm_decode_frame,
-    .capabilities   = AV_CODEC_CAP_DR1,
-};
-#endif
-
-#if CONFIG_PFM_DECODER
-AVCodec ff_pfm_decoder = {
-    .name           = "pfm",
-    .long_name      = NULL_IF_CONFIG_SMALL("PFM (Portable FloatMap) image"),
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_PFM,
     .priv_data_size = sizeof(PNMContext),
     .decode         = pnm_decode_frame,
     .capabilities   = AV_CODEC_CAP_DR1,
