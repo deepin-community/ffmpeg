@@ -3,8 +3,10 @@ code_to_find_7200_AVCodec.patch
 0002-Add-optimizations-for-loongarch.patch
 0003-Release-4.1.6-1.lnd.6.patch
 0004-pkg_lnd1-Release.patch
+ft-x100-hwaccel.patch
 uniontech-CVE-2020-20898-CVE-2021-38094-CVE-2021-38093-CVE-2021-38092-CVE-2021-38091-CVE-2021-38090.patch
 uniontech-CVE-2020-20451.patch
+ffmpeg-hisi-patch.patch
 uniontech-CVE-2020-22039.patch
 uniontech-CVE-2020-22044.patch
 uniontech-CVE-2020-20450.patch
