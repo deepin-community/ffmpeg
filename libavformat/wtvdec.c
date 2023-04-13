@@ -71,7 +71,7 @@ static int wtvfile_read_packet(void *opaque, uint8_t *buf, int buf_size)
 {
     WtvFile *wf = opaque;
     AVIOContext *pb = wf->pb_filesystem;
-    int nread = 0, n = 0;
+    int nread = 0;
 
     if (wf->error || pb->error)
         return -1;
@@ -80,6 +80,7 @@ static int wtvfile_read_packet(void *opaque, uint8_t *buf, int buf_size)
 
     buf_size = FFMIN(buf_size, wf->length - wf->position);
     while(nread < buf_size) {
+        int n;
         int remaining_in_sector = (1 << wf->sector_bits) - (wf->position & ((1 << wf->sector_bits) - 1));
         int read_request        = FFMIN(buf_size - nread, remaining_in_sector);
 
@@ -99,7 +100,7 @@ static int wtvfile_read_packet(void *opaque, uint8_t *buf, int buf_size)
             }
         }
     }
-    return nread ? nread : n;
+    return nread;
 }
 
 /**
@@ -294,7 +295,7 @@ static AVIOContext * wtvfile_open2(AVFormatContext *s, const uint8_t *buf, int b
 
         buf += dir_length;
     }
-    return NULL;
+    return 0;
 }
 
 #define wtvfile_open(s, buf, buf_size, filename) \
@@ -375,7 +376,7 @@ static const ff_asf_guid mediasubtype_dtvccdata =
 static const ff_asf_guid mediasubtype_mpeg2_sections =
     {0x79,0x85,0x9F,0x4A,0xF8,0x6B,0x92,0x43,0x8A,0x6D,0xD2,0xDD,0x09,0xFA,0x78,0x61};
 
-static int read_probe(const AVProbeData *p)
+static int read_probe(AVProbeData *p)
 {
     return ff_guidcmp(p->buf, ff_wtv_guid) ? 0 : AVPROBE_SCORE_MAX;
 }
@@ -914,10 +915,10 @@ static int parse_chunks(AVFormatContext *s, int mode, int64_t seekts, int *len_p
                     wtv->last_valid_pts = wtv->pts;
                     if (wtv->epoch == AV_NOPTS_VALUE || wtv->pts < wtv->epoch)
                         wtv->epoch = wtv->pts;
-                    if (mode == SEEK_TO_PTS && wtv->pts >= seekts) {
-                        avio_skip(pb, WTV_PAD8(len) - consumed);
-                        return 0;
-                    }
+                if (mode == SEEK_TO_PTS && wtv->pts >= seekts) {
+                    avio_skip(pb, WTV_PAD8(len) - consumed);
+                    return 0;
+                }
                 }
             }
         } else if (!ff_guidcmp(g, ff_data_guid)) {
@@ -958,9 +959,6 @@ static int parse_chunks(AVFormatContext *s, int mode, int64_t seekts, int *len_p
             //ignore known guids
         } else
             av_log(s, AV_LOG_WARNING, "unsupported chunk:"FF_PRI_GUID"\n", FF_ARG_GUID(g));
-
-        if (avio_feof(pb))
-            break;
 
         avio_skip(pb, WTV_PAD8(len) - consumed);
     }

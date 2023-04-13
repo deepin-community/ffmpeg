@@ -22,8 +22,11 @@
 
 #define MAX_SLICES 8
 
+// ./fate 2 ./crew_cif out.y4m
+
 #include "config.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,10 +41,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "libavformat/network.h"
 #include "libavcodec/avcodec.h"
 #include "libavutil/pixdesc.h"
 #include "libavutil/hash.h"
-#include "libavutil/bswap.h"
 
 static int header = 0;
 
@@ -114,12 +117,12 @@ int main(int argc, char **argv)
     unsigned int threads;
     AVPacket *pkt;
     FILE *file = NULL;
-    char * nal = NULL;
+    char nal[MAX_SLICES * UINT16_MAX + AV_INPUT_BUFFER_PADDING_SIZE];
     int nals = 0, ret = 0;
-    char *p;
+    char *p = nal;
 
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <threads> <input file>\n", argv[0]);
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s <threads> <input file> <output file>\n", argv[0]);
         return -1;
     }
 
@@ -135,11 +138,6 @@ int main(int argc, char **argv)
     if (!(pkt = av_packet_alloc())) {
         return -1;
     }
-
-    nal = av_malloc(MAX_SLICES * UINT16_MAX + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (!nal)
-        goto err;
-    p = nal;
 
     if (!(codec = avcodec_find_decoder(AV_CODEC_ID_H264))) {
         fprintf(stderr, "Codec not found\n");
@@ -193,7 +191,7 @@ int main(int argc, char **argv)
         if (ret != sizeof(uint16_t))
             break;
 
-        size = av_be2ne16(size);
+        size = ntohs(size);
         ret = fread(p, 1, size, file);
         if (ret != size) {
             perror("Couldn't read data");
@@ -225,8 +223,6 @@ int main(int argc, char **argv)
     ret = decode(c, frame, NULL);
 
 err:
-    if (nal)
-        av_free(nal);
     if (file)
         fclose(file);
     av_frame_free(&frame);

@@ -28,7 +28,6 @@
 
 #include "ffmpeg.h"
 
-static AVBufferRef *hw_device_ctx;
 char *qsv_device = NULL;
 
 static int qsv_get_buffer(AVCodecContext *s, AVFrame *frame, int flags)

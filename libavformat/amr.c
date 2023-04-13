@@ -29,7 +29,6 @@ Only mono files are supported.
 #include "libavutil/channel_layout.h"
 #include "avformat.h"
 #include "internal.h"
-#include "rawenc.h"
 
 typedef struct {
     uint64_t cumulated_size;
@@ -61,11 +60,18 @@ static int amr_write_header(AVFormatContext *s)
     } else {
         return -1;
     }
+    avio_flush(pb);
+    return 0;
+}
+
+static int amr_write_packet(AVFormatContext *s, AVPacket *pkt)
+{
+    avio_write(s->pb, pkt->data, pkt->size);
     return 0;
 }
 #endif /* CONFIG_AMR_MUXER */
 
-static int amr_probe(const AVProbeData *p)
+static int amr_probe(AVProbeData *p)
 {
     // Only check for "#!AMR" which could be amr-wb, amr-nb.
     // This will also trigger multichannel files: "#!AMR_MC1.0\n" and
@@ -150,6 +156,7 @@ static int amr_read_packet(AVFormatContext *s, AVPacket *pkt)
     read              = avio_read(s->pb, pkt->data + 1, size - 1);
 
     if (read != size - 1) {
+        av_packet_unref(pkt);
         if (read < 0)
             return read;
         return AVERROR(EIO);
@@ -171,7 +178,7 @@ AVInputFormat ff_amr_demuxer = {
 #endif
 
 #if CONFIG_AMRNB_DEMUXER
-static int amrnb_probe(const AVProbeData *p)
+static int amrnb_probe(AVProbeData *p)
 {
     int mode, i = 0, valid = 0, invalid = 0;
     const uint8_t *b = p->buf;
@@ -227,7 +234,7 @@ AVInputFormat ff_amrnb_demuxer = {
 #endif
 
 #if CONFIG_AMRWB_DEMUXER
-static int amrwb_probe(const AVProbeData *p)
+static int amrwb_probe(AVProbeData *p)
 {
     int mode, i = 0, valid = 0, invalid = 0;
     const uint8_t *b = p->buf;
@@ -291,7 +298,7 @@ AVOutputFormat ff_amr_muxer = {
     .audio_codec       = AV_CODEC_ID_AMR_NB,
     .video_codec       = AV_CODEC_ID_NONE,
     .write_header      = amr_write_header,
-    .write_packet      = ff_raw_write_packet,
+    .write_packet      = amr_write_packet,
     .flags             = AVFMT_NOTIMESTAMPS,
 };
 #endif

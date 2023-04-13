@@ -288,7 +288,7 @@ static int extract_header(AVCodecContext *const avctx,
             if (s->bpp > 8) {
                 av_log(avctx, AV_LOG_ERROR, "Invalid number of hold bits for HAM: %u\n", s->ham);
                 return AVERROR_INVALIDDATA;
-            } else if (s->ham != (s->bpp > 6 ? 6 : 4)) {
+            } if (s->ham != (s->bpp > 6 ? 6 : 4)) {
                 av_log(avctx, AV_LOG_ERROR, "Invalid number of hold bits for HAM: %u, BPP: %u\n", s->ham, s->bpp);
                 return AVERROR_INVALIDDATA;
             }
@@ -1362,9 +1362,6 @@ static void decode_delta_d(uint8_t *dst,
         bytestream2_init(&gb, buf + ofssrc, buf_end - (buf + ofssrc));
 
         entries = bytestream2_get_be32(&gb);
-        if (entries * 8LL > bytestream2_get_bytes_left(&gb))
-            return;
-
         while (entries && bytestream2_get_bytes_left(&gb) >= 8) {
             int32_t opcode  = bytestream2_get_be32(&gb);
             unsigned offset = bytestream2_get_be32(&gb);

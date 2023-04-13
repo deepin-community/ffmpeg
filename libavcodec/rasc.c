@@ -112,7 +112,7 @@ static int init_frames(AVCodecContext *avctx)
 }
 
 static int decode_fint(AVCodecContext *avctx,
-                       const AVPacket *avpkt, unsigned size)
+                       AVPacket *avpkt, unsigned size)
 {
     RASCContext *s = avctx->priv_data;
     GetByteContext *gb = &s->gb;
@@ -127,8 +127,6 @@ static int decode_fint(AVCodecContext *avctx,
         clear_plane(avctx, s->frame1);
         return 0;
     }
-    if (bytestream2_get_bytes_left(gb) < 72)
-        return AVERROR_INVALIDDATA;
 
     bytestream2_skip(gb, 8);
     w = bytestream2_get_le32(gb);
@@ -171,7 +169,7 @@ static int decode_fint(AVCodecContext *avctx,
     return 0;
 }
 
-static int decode_zlib(AVCodecContext *avctx, const AVPacket *avpkt,
+static int decode_zlib(AVCodecContext *avctx, AVPacket *avpkt,
                        unsigned size, unsigned uncompressed_size)
 {
     RASCContext *s = avctx->priv_data;
@@ -205,7 +203,7 @@ static int decode_zlib(AVCodecContext *avctx, const AVPacket *avpkt,
 }
 
 static int decode_move(AVCodecContext *avctx,
-                       const AVPacket *avpkt, unsigned size)
+                       AVPacket *avpkt, unsigned size)
 {
     RASCContext *s = avctx->priv_data;
     GetByteContext *gb = &s->gb;
@@ -329,7 +327,7 @@ static int decode_move(AVCodecContext *avctx,
     len--;
 
 static int decode_dlta(AVCodecContext *avctx,
-                       const AVPacket *avpkt, unsigned size)
+                       AVPacket *avpkt, unsigned size)
 {
     RASCContext *s = avctx->priv_data;
     GetByteContext *gb = &s->gb;
@@ -471,7 +469,7 @@ static int decode_dlta(AVCodecContext *avctx,
 }
 
 static int decode_kfrm(AVCodecContext *avctx,
-                       const AVPacket *avpkt, unsigned size)
+                       AVPacket *avpkt, unsigned size)
 {
     RASCContext *s = avctx->priv_data;
     GetByteContext *gb = &s->gb;
@@ -534,7 +532,7 @@ static int decode_kfrm(AVCodecContext *avctx,
 }
 
 static int decode_mous(AVCodecContext *avctx,
-                       const AVPacket *avpkt, unsigned size)
+                       AVPacket *avpkt, unsigned size)
 {
     RASCContext *s = avctx->priv_data;
     GetByteContext *gb = &s->gb;
@@ -574,7 +572,7 @@ static int decode_mous(AVCodecContext *avctx,
 }
 
 static int decode_mpos(AVCodecContext *avctx,
-                       const AVPacket *avpkt, unsigned size)
+                       AVPacket *avpkt, unsigned size)
 {
     RASCContext *s = avctx->priv_data;
     GetByteContext *gb = &s->gb;
@@ -722,7 +720,6 @@ static int decode_frame(AVCodecContext *avctx,
             break;
         default:
             bytestream2_skip(gb, size);
-            ret = 0;
         }
 
         if (ret < 0)

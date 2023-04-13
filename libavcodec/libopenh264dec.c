@@ -91,8 +91,8 @@ static int svc_decode_frame(AVCodecContext *avctx, void *data,
 {
     SVCContext *s = avctx->priv_data;
     SBufferInfo info = { 0 };
-    uint8_t *ptrs[4] = { NULL };
-    int ret, linesize[4];
+    uint8_t* ptrs[3];
+    int ret, linesize[3];
     AVFrame *avframe = data;
     DECODING_STATE state;
 #if OPENH264_VER_AT_LEAST(1, 7)
@@ -109,18 +109,10 @@ static int svc_decode_frame(AVCodecContext *avctx, void *data,
 #endif
     } else {
         info.uiInBsTimeStamp = avpkt->pts;
-#if OPENH264_VER_AT_LEAST(1, 4)
-        // Contrary to the name, DecodeFrameNoDelay actually does buffering
-        // and reordering of frames, and is the recommended decoding entry
-        // point since 1.4. This is essential for successfully decoding
-        // B-frames.
-        state = (*s->decoder)->DecodeFrameNoDelay(s->decoder, avpkt->data, avpkt->size, ptrs, &info);
-#else
         state = (*s->decoder)->DecodeFrame2(s->decoder, avpkt->data, avpkt->size, ptrs, &info);
-#endif
     }
     if (state != dsErrorFree) {
-        av_log(avctx, AV_LOG_ERROR, "DecodeFrame failed\n");
+        av_log(avctx, AV_LOG_ERROR, "DecodeFrame2 failed\n");
         return AVERROR_UNKNOWN;
     }
     if (info.iBufferStatus != 1) {
@@ -140,7 +132,6 @@ static int svc_decode_frame(AVCodecContext *avctx, void *data,
 
     linesize[0] = info.UsrData.sSystemBuffer.iStride[0];
     linesize[1] = linesize[2] = info.UsrData.sSystemBuffer.iStride[1];
-    linesize[3] = 0;
     av_image_copy(avframe->data, avframe->linesize, (const uint8_t **) ptrs, linesize, avctx->pix_fmt, avctx->width, avctx->height);
 
     avframe->pts     = info.uiOutYuvTimeStamp;

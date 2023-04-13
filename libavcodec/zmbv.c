@@ -69,8 +69,8 @@ typedef struct ZmbvContext {
     int stride;
     int bw, bh, bx, by;
     int decomp_len;
-    int got_keyframe;
     z_stream zstream;
+    int (*decode_intra)(struct ZmbvContext *c);
     int (*decode_xor)(struct ZmbvContext *c);
 } ZmbvContext;
 
@@ -121,8 +121,6 @@ static int zmbv_decode_xor_8(ZmbvContext *c)
             for (j = 0; j < bh2; j++) {
                 if (my + j < 0 || my + j >= c->height) {
                     memset(out, 0, bw2);
-                } else if (mx >= 0 && mx + bw2 <= c->width){
-                    memcpy(out, tprev, sizeof(*out) * bw2);
                 } else {
                     for (i = 0; i < bw2; i++) {
                         if (mx + i < 0 || mx + i >= c->width)
@@ -195,8 +193,6 @@ static int zmbv_decode_xor_16(ZmbvContext *c)
             for (j = 0; j < bh2; j++) {
                 if (my + j < 0 || my + j >= c->height) {
                     memset(out, 0, bw2 * 2);
-                } else if (mx >= 0 && mx + bw2 <= c->width){
-                    memcpy(out, tprev, sizeof(*out) * bw2);
                 } else {
                     for (i = 0; i < bw2; i++) {
                         if (mx + i < 0 || mx + i >= c->width)
@@ -274,8 +270,6 @@ static int zmbv_decode_xor_24(ZmbvContext *c)
             for (j = 0; j < bh2; j++) {
                 if (my + j < 0 || my + j >= c->height) {
                     memset(out, 0, bw2 * 3);
-                } else if (mx >= 0 && mx + bw2 <= c->width){
-                    memcpy(out, tprev, 3 * bw2);
                 } else {
                     for (i = 0; i < bw2; i++){
                         if (mx + i < 0 || mx + i >= c->width) {
@@ -309,7 +303,7 @@ static int zmbv_decode_xor_24(ZmbvContext *c)
         prev += stride * c->bh;
     }
     if (src - c->decomp_buf != c->decomp_len)
-        av_log(c->avctx, AV_LOG_ERROR, "Used %"PTRDIFF_SPECIFIER" of %i bytes\n",
+        av_log(c->avctx, AV_LOG_ERROR, "Used %i of %i bytes\n",
                src-c->decomp_buf, c->decomp_len);
     return 0;
 }
@@ -357,8 +351,6 @@ static int zmbv_decode_xor_32(ZmbvContext *c)
             for (j = 0; j < bh2; j++) {
                 if (my + j < 0 || my + j >= c->height) {
                     memset(out, 0, bw2 * 4);
-                } else if (mx >= 0 && mx + bw2 <= c->width){
-                    memcpy(out, tprev, sizeof(*out) * bw2);
                 } else {
                     for (i = 0; i < bw2; i++){
                         if (mx + i < 0 || mx + i >= c->width)
@@ -425,7 +417,8 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
     c->flags = buf[0];
     buf++; len--;
     if (c->flags & ZMBV_KEYFRAME) {
-        c->got_keyframe = 0;
+        void *decode_intra = NULL;
+        c->decode_intra= NULL;
 
         if (len < 6)
             return AVERROR_INVALIDDATA;
@@ -435,6 +428,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         c->fmt = buf[3];
         c->bw = buf[4];
         c->bh = buf[5];
+        c->decode_intra = NULL;
         c->decode_xor = NULL;
 
         buf += 6;
@@ -458,6 +452,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         switch (c->fmt) {
         case ZMBV_FMT_8BPP:
             c->bpp = 8;
+            decode_intra = zmbv_decode_intra;
             c->decode_xor = zmbv_decode_xor_8;
             avctx->pix_fmt = AV_PIX_FMT_PAL8;
             c->stride = c->width;
@@ -465,6 +460,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         case ZMBV_FMT_15BPP:
         case ZMBV_FMT_16BPP:
             c->bpp = 16;
+            decode_intra = zmbv_decode_intra;
             c->decode_xor = zmbv_decode_xor_16;
             if (c->fmt == ZMBV_FMT_15BPP)
                 avctx->pix_fmt = AV_PIX_FMT_RGB555LE;
@@ -475,13 +471,15 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
 #ifdef ZMBV_ENABLE_24BPP
         case ZMBV_FMT_24BPP:
             c->bpp = 24;
+            decode_intra = zmbv_decode_intra;
             c->decode_xor = zmbv_decode_xor_24;
-            avctx->pix_fmt = AV_PIX_FMT_BGR24;
+            avctx->pix_fmt = AV_PIX_FMT_RGB24;
             c->stride = c->width * 3;
             break;
 #endif //ZMBV_ENABLE_24BPP
         case ZMBV_FMT_32BPP:
             c->bpp = 32;
+            decode_intra = zmbv_decode_intra;
             c->decode_xor = zmbv_decode_xor_32;
             avctx->pix_fmt = AV_PIX_FMT_BGR0;
             c->stride = c->width * 4;
@@ -511,7 +509,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         }
         memset(c->cur, 0, avctx->width * avctx->height * (c->bpp / 8));
         memset(c->prev, 0, avctx->width * avctx->height * (c->bpp / 8));
-        c->got_keyframe = 1;
+        c->decode_intra= decode_intra;
     }
     if (c->flags & ZMBV_KEYFRAME) {
         expected_size = avctx->width * avctx->height * (c->bpp / 8);
@@ -522,7 +520,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         (c->flags & (ZMBV_DELTAPAL | ZMBV_KEYFRAME)))
         expected_size += 768;
 
-    if (!c->got_keyframe) {
+    if (!c->decode_intra) {
         av_log(avctx, AV_LOG_ERROR, "Error! Got no format or no keyframe!\n");
         return AVERROR_INVALIDDATA;
     }
@@ -536,7 +534,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         c->decomp_len = len;
     } else { // ZLIB-compressed data
         c->zstream.total_in = c->zstream.total_out = 0;
-        c->zstream.next_in = buf;
+        c->zstream.next_in = (uint8_t*)buf;
         c->zstream.avail_in = len;
         c->zstream.next_out = c->decomp_buf;
         c->zstream.avail_out = c->decomp_size;
@@ -558,7 +556,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
     if (c->flags & ZMBV_KEYFRAME) {
         frame->key_frame = 1;
         frame->pict_type = AV_PICTURE_TYPE_I;
-        zmbv_decode_intra(c);
+        c->decode_intra(c);
     } else {
         frame->key_frame = 0;
         frame->pict_type = AV_PICTURE_TYPE_P;

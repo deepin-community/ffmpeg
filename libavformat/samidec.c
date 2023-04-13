@@ -36,7 +36,7 @@ typedef struct {
     FFDemuxSubtitlesQueue q;
 } SAMIContext;
 
-static int sami_probe(const AVProbeData *p)
+static int sami_probe(AVProbeData *p)
 {
     char buf[6];
     FFTextReader tr;
@@ -89,7 +89,6 @@ static int sami_read_header(AVFormatContext *s)
             sub = ff_subtitles_queue_insert(&sami->q, buf.str, buf.len, !is_sync);
             if (!sub) {
                 res = AVERROR(ENOMEM);
-                av_bprint_finalize(&hdr_buf, NULL);
                 goto end;
             }
             if (is_sync) {
@@ -98,7 +97,6 @@ static int sami_read_header(AVFormatContext *s)
                 sub->pts      = p ? strtol(p, NULL, 10) : 0;
                 if (sub->pts <= INT64_MIN/2 || sub->pts >= INT64_MAX/2) {
                     res = AVERROR_PATCHWELCOME;
-                    av_bprint_finalize(&hdr_buf, NULL);
                     goto end;
                 }
 

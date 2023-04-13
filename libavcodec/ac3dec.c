@@ -33,7 +33,6 @@
 #include "libavutil/crc.h"
 #include "libavutil/downmix_info.h"
 #include "libavutil/opt.h"
-#include "libavutil/thread.h"
 #include "bswapdsp.h"
 #include "internal.h"
 #include "aac_ac3_parser.h"
@@ -184,26 +183,23 @@ static av_cold void ac3_tables_init(void)
  */
 static av_cold int ac3_decode_init(AVCodecContext *avctx)
 {
-    static AVOnce init_static_once = AV_ONCE_INIT;
     AC3DecodeContext *s = avctx->priv_data;
-    int i, ret;
+    int i;
 
     s->avctx = avctx;
 
-    if ((ret = ff_mdct_init(&s->imdct_256, 8, 1, 1.0)) < 0 ||
-        (ret = ff_mdct_init(&s->imdct_512, 9, 1, 1.0)) < 0)
-        return ret;
+    ac3_tables_init();
+    ff_mdct_init(&s->imdct_256, 8, 1, 1.0);
+    ff_mdct_init(&s->imdct_512, 9, 1, 1.0);
     AC3_RENAME(ff_kbd_window_init)(s->window, 5.0, 256);
     ff_bswapdsp_init(&s->bdsp);
 
 #if (USE_FIXED)
     s->fdsp = avpriv_alloc_fixed_dsp(avctx->flags & AV_CODEC_FLAG_BITEXACT);
 #else
-    ff_fmt_convert_init(&s->fmt_conv, avctx);
     s->fdsp = avpriv_float_dsp_alloc(avctx->flags & AV_CODEC_FLAG_BITEXACT);
+    ff_fmt_convert_init(&s->fmt_conv, avctx);
 #endif
-    if (!s->fdsp)
-        return AVERROR(ENOMEM);
 
     ff_ac3dsp_init(&s->ac3dsp, avctx->flags & AV_CODEC_FLAG_BITEXACT);
     av_lfg_init(&s->dith_state, 0);
@@ -226,8 +222,6 @@ static av_cold int ac3_decode_init(AVCodecContext *avctx)
         s->xcfptr[i] = s->transform_coeffs[i];
         s->dlyptr[i] = s->delay[i];
     }
-
-    ff_thread_once(&init_static_once, ac3_tables_init);
 
     return 0;
 }
@@ -458,7 +452,7 @@ static int decode_exponents(AC3DecodeContext *s,
         prevexp += dexp[i] - 2;
         if (prevexp > 24U) {
             av_log(s->avctx, AV_LOG_ERROR, "exponent %d is out-of-range\n", prevexp);
-            return AVERROR_INVALIDDATA;
+            return -1;
         }
         switch (group_size) {
         case 4: dexps[j++] = prevexp;
@@ -1473,8 +1467,7 @@ static int ac3_decode_frame(AVCodecContext * avctx, void *data,
     int buf_size, full_buf_size = avpkt->size;
     AC3DecodeContext *s = avctx->priv_data;
     int blk, ch, err, offset, ret;
-    int i;
-    int skip = 0, got_independent_frame = 0;
+    int got_independent_frame = 0;
     const uint8_t *channel_map;
     uint8_t extended_channel_map[EAC3_MAX_CHANNELS];
     const SHORTFLOAT *output[AC3_MAX_CHANNELS];
@@ -1484,23 +1477,6 @@ static int ac3_decode_frame(AVCodecContext * avctx, void *data,
     s->superframe_size = 0;
 
     buf_size = full_buf_size;
-    for (i = 1; i < buf_size; i += 2) {
-        if (buf[i] == 0x77 || buf[i] == 0x0B) {
-            if ((buf[i] ^ buf[i-1]) == (0x77 ^ 0x0B)) {
-                i--;
-                break;
-            } else if ((buf[i] ^ buf[i+1]) == (0x77 ^ 0x0B)) {
-                break;
-            }
-        }
-    }
-    if (i >= buf_size)
-        return AVERROR_INVALIDDATA;
-    if (i > 10)
-        return i;
-    buf += i;
-    buf_size -= i;
-
     /* copy input buffer to decoder context to avoid reading past the end
        of the buffer, which can be caused by a damaged input stream. */
     if (buf_size >= 2 && AV_RB16(buf) == 0x770B) {
@@ -1661,11 +1637,6 @@ dependent_frame:
         AC3HeaderInfo hdr;
         int err;
 
-        if (buf_size - s->frame_size <= 16) {
-            skip = buf_size - s->frame_size;
-            goto skip;
-        }
-
         if ((ret = init_get_bits8(&s->gbc, buf + s->frame_size, buf_size - s->frame_size)) < 0)
             return ret;
 
@@ -1686,7 +1657,6 @@ dependent_frame:
             }
         }
     }
-skip:
 
     frame->decode_error_flags = err ? FF_DECODE_ERROR_INVALID_BITSTREAM : 0;
 
@@ -1826,9 +1796,9 @@ skip:
     *got_frame_ptr = 1;
 
     if (!s->superframe_size)
-        return FFMIN(full_buf_size, s->frame_size + skip);
+        return FFMIN(full_buf_size, s->frame_size);
 
-    return FFMIN(full_buf_size, s->superframe_size + skip);
+    return FFMIN(full_buf_size, s->superframe_size);
 }
 
 /**

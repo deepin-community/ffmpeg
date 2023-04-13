@@ -672,6 +672,9 @@ static int lag_decode_frame(AVCodecContext *avctx,
 
         if ((ret = ff_thread_get_buffer(avctx, &frame, 0)) < 0)
             return ret;
+        if (buf_size <= offset_ry || buf_size <= offset_gu || buf_size <= offset_bv) {
+            return AVERROR_INVALIDDATA;
+        }
 
         if (offset_ry >= buf_size ||
             offset_gu >= buf_size ||
@@ -712,6 +715,16 @@ static av_cold int lag_decode_init(AVCodecContext *avctx)
     return 0;
 }
 
+#if HAVE_THREADS
+static av_cold int lag_decode_init_thread_copy(AVCodecContext *avctx)
+{
+    LagarithContext *l = avctx->priv_data;
+    l->avctx = avctx;
+
+    return 0;
+}
+#endif
+
 AVCodec ff_lagarith_decoder = {
     .name           = "lagarith",
     .long_name      = NULL_IF_CONFIG_SMALL("Lagarith lossless"),
@@ -719,6 +732,7 @@ AVCodec ff_lagarith_decoder = {
     .id             = AV_CODEC_ID_LAGARITH,
     .priv_data_size = sizeof(LagarithContext),
     .init           = lag_decode_init,
+    .init_thread_copy = ONLY_IF_THREADS_ENABLED(lag_decode_init_thread_copy),
     .decode         = lag_decode_frame,
     .capabilities   = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS,
 };

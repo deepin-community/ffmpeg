@@ -53,7 +53,6 @@ typedef struct TDSCContext {
     GetByteContext gbc;
 
     AVFrame *refframe;          // full decoded frame (without cursor)
-    AVPacket *jpkt;             // encoded JPEG tile
     AVFrame *jpgframe;          // decoded JPEG tile
     uint8_t *tilebuffer;        // buffer containing tile data
 
@@ -81,7 +80,6 @@ static av_cold int tdsc_close(AVCodecContext *avctx)
 
     av_frame_free(&ctx->refframe);
     av_frame_free(&ctx->jpgframe);
-    av_packet_free(&ctx->jpkt);
     av_freep(&ctx->deflatebuffer);
     av_freep(&ctx->tilebuffer);
     av_freep(&ctx->cursor);
@@ -113,8 +111,7 @@ static av_cold int tdsc_init(AVCodecContext *avctx)
     /* Allocate reference and JPEG frame */
     ctx->refframe = av_frame_alloc();
     ctx->jpgframe = av_frame_alloc();
-    ctx->jpkt     = av_packet_alloc();
-    if (!ctx->refframe || !ctx->jpgframe || !ctx->jpkt)
+    if (!ctx->refframe || !ctx->jpgframe)
         return AVERROR(ENOMEM);
 
     /* Prepare everything needed for JPEG decoding */
@@ -128,7 +125,7 @@ static av_cold int tdsc_init(AVCodecContext *avctx)
     ctx->jpeg_avctx->flags2 = avctx->flags2;
     ctx->jpeg_avctx->dct_algo = avctx->dct_algo;
     ctx->jpeg_avctx->idct_algo = avctx->idct_algo;
-    ret = avcodec_open2(ctx->jpeg_avctx, codec, NULL);
+    ret = ff_codec_open2_recursive(ctx->jpeg_avctx, codec, NULL);
     if (ret < 0)
         return ret;
 
@@ -345,14 +342,15 @@ static int tdsc_decode_jpeg_tile(AVCodecContext *avctx, int tile_size,
                                  int x, int y, int w, int h)
 {
     TDSCContext *ctx = avctx->priv_data;
+    AVPacket jpkt;
     int ret;
 
     /* Prepare a packet and send to the MJPEG decoder */
-    av_packet_unref(ctx->jpkt);
-    ctx->jpkt->data = ctx->tilebuffer;
-    ctx->jpkt->size = tile_size;
+    av_init_packet(&jpkt);
+    jpkt.data = ctx->tilebuffer;
+    jpkt.size = tile_size;
 
-    ret = avcodec_send_packet(ctx->jpeg_avctx, ctx->jpkt);
+    ret = avcodec_send_packet(ctx->jpeg_avctx, &jpkt);
     if (ret < 0) {
         av_log(avctx, AV_LOG_ERROR, "Error submitting a packet for decoding\n");
         return ret;
@@ -485,7 +483,7 @@ static int tdsc_parse_tdsf(AVCodecContext *avctx, int number_tiles)
 
     /* Allocate the reference frame if not already done or on size change */
     if (init_refframe) {
-        ret = av_frame_get_buffer(ctx->refframe, 0);
+        ret = av_frame_get_buffer(ctx->refframe, 32);
         if (ret < 0)
             return ret;
     }
@@ -531,15 +529,10 @@ static int tdsc_decode_frame(AVCodecContext *avctx, void *data,
 
     /* Resize deflate buffer on resolution change */
     if (ctx->width != avctx->width || ctx->height != avctx->height) {
-        int deflatelen = avctx->width * avctx->height * (3 + 1);
-        if (deflatelen != ctx->deflatelen) {
-            ctx->deflatelen =deflatelen;
-            ret = av_reallocp(&ctx->deflatebuffer, ctx->deflatelen);
-            if (ret < 0) {
-                ctx->deflatelen = 0;
-                return ret;
-            }
-        }
+        ctx->deflatelen = avctx->width * avctx->height * (3 + 1);
+        ret = av_reallocp(&ctx->deflatebuffer, ctx->deflatelen);
+        if (ret < 0)
+            return ret;
     }
     dlen = ctx->deflatelen;
 

@@ -29,7 +29,7 @@
 
 #include "libavutil/channel_layout.h"
 #include "libavutil/float_dsp.h"
-#include "libavutil/mem_internal.h"
+#include "libavutil/mem.h"
 #include "libavutil/thread.h"
 #include "avcodec.h"
 #include "internal.h"
@@ -367,7 +367,7 @@ static av_cold void wmavoice_flush(AVCodecContext *ctx)
 static av_cold int wmavoice_decode_init(AVCodecContext *ctx)
 {
     static AVOnce init_static_once = AV_ONCE_INIT;
-    int n, flags, pitch_range, lsp16_flag, ret;
+    int n, flags, pitch_range, lsp16_flag;
     WMAVoiceContext *s = ctx->priv_data;
 
     ff_thread_once(&init_static_once, wmavoice_init_static_data);
@@ -395,11 +395,10 @@ static av_cold int wmavoice_decode_init(AVCodecContext *ctx)
     s->spillover_bitsize = 3 + av_ceil_log2(ctx->block_align);
     s->do_apf            =    flags & 0x1;
     if (s->do_apf) {
-        if ((ret = ff_rdft_init(&s->rdft,  7,  DFT_R2C)) < 0 ||
-            (ret = ff_rdft_init(&s->irdft, 7, IDFT_C2R)) < 0 ||
-            (ret = ff_dct_init (&s->dct,   6,    DCT_I)) < 0 ||
-            (ret = ff_dct_init (&s->dst,   6,    DST_I)) < 0)
-            return ret;
+        ff_rdft_init(&s->rdft,  7, DFT_R2C);
+        ff_rdft_init(&s->irdft, 7, IDFT_C2R);
+        ff_dct_init(&s->dct,  6, DCT_I);
+        ff_dct_init(&s->dst,  6, DST_I);
 
         ff_sine_window_init(s->cos, 256);
         memcpy(&s->sin[255], s->cos, 256 * sizeof(s->cos[0]));
@@ -1866,7 +1865,7 @@ static int parse_packet_header(WMAVoiceContext *s)
  * @param size size of the source data, in bytes
  * @param gb bit I/O context specifying the current position in the source.
  *           data. This function might use this to align the bit position to
- *           a whole-byte boundary before calling #ff_copy_bits() on aligned
+ *           a whole-byte boundary before calling #avpriv_copy_bits() on aligned
  *           source data
  * @param nbits the amount of bits to copy from source to target
  *
@@ -1887,7 +1886,7 @@ static void copy_bits(PutBitContext *pb,
     rmn_bits &= 7; rmn_bytes >>= 3;
     if ((rmn_bits = FFMIN(rmn_bits, nbits)) > 0)
         put_bits(pb, rmn_bits, get_bits(gb, rmn_bits));
-    ff_copy_bits(pb, data + size - rmn_bytes,
+    avpriv_copy_bits(pb, data + size - rmn_bytes,
                  FFMIN(nbits - rmn_bits, rmn_bytes << 3));
 }
 
@@ -1915,7 +1914,7 @@ static int wmavoice_decode_packet(AVCodecContext *ctx, void *data,
      * in a single "muxer" packet, so we artificially emulate that by
      * capping the packet size at ctx->block_align. */
     for (size = avpkt->size; size > ctx->block_align; size -= ctx->block_align);
-    init_get_bits8(&s->gb, avpkt->data, size);
+    init_get_bits(&s->gb, avpkt->data, size << 3);
 
     /* size == ctx->block_align is used to indicate whether we are dealing with
      * a new packet or a packet of which we already read the packet header
@@ -2007,6 +2006,5 @@ AVCodec ff_wmavoice_decoder = {
     .close            = wmavoice_decode_end,
     .decode           = wmavoice_decode_packet,
     .capabilities     = AV_CODEC_CAP_SUBFRAMES | AV_CODEC_CAP_DR1 | AV_CODEC_CAP_DELAY,
-    .caps_internal    = FF_CODEC_CAP_INIT_CLEANUP,
     .flush            = wmavoice_flush,
 };

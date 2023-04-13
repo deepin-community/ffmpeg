@@ -179,20 +179,12 @@ static int gif_read_image(GifState *s, AVFrame *frame)
     }
 
     /* verify that all the image is inside the screen dimensions */
-    if (!width || width > s->screen_width) {
-        av_log(s->avctx, AV_LOG_WARNING, "Invalid image width: %d, truncating.\n", width);
-        width = s->screen_width;
-    }
-    if (left >= s->screen_width) {
-        av_log(s->avctx, AV_LOG_ERROR, "Invalid left position: %d.\n", left);
+    if (!width || width > s->screen_width || left >= s->screen_width) {
+        av_log(s->avctx, AV_LOG_ERROR, "Invalid image width.\n");
         return AVERROR_INVALIDDATA;
     }
-    if (!height || height > s->screen_height) {
-        av_log(s->avctx, AV_LOG_WARNING, "Invalid image height: %d, truncating.\n", height);
-        height = s->screen_height;
-    }
-    if (top >= s->screen_height) {
-        av_log(s->avctx, AV_LOG_ERROR, "Invalid top position: %d.\n", top);
+    if (!height || height > s->screen_height || top >= s->screen_height) {
+        av_log(s->avctx, AV_LOG_ERROR, "Invalid image height.\n");
         return AVERROR_INVALIDDATA;
     }
     if (left + width > s->screen_width) {
@@ -513,7 +505,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
             return AVERROR_INVALIDDATA;
         }
 
-        if ((ret = ff_reget_buffer(avctx, s->frame, 0)) < 0)
+        if ((ret = ff_reget_buffer(avctx, s->frame)) < 0)
             return ret;
 
         s->frame->pict_type = AV_PICTURE_TYPE_P;

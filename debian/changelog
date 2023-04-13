@@ -1,386 +1,176 @@
-ffmpeg (7:4.4.2-1) unstable; urgency=medium
+ffmpeg (7:4.1.9.8-deepin8) unstable; urgency=medium
 
-  * New upstream version 4.4.2
-  * debian/rules: Disable sndio
+  * update xd patch
 
- -- Sebastian Ramacher <sramacher@debian.org>  Mon, 18 Apr 2022 21:42:58 +0200
+ -- liuzheng <liuzheng@uniontech.com>  Mon, 09 Jan 2023 19:59:38 +0800
 
-ffmpeg (7:4.4.1-3) unstable; urgency=medium
+ffmpeg (7:4.1.9.7-deepin7) unstable; urgency=low
 
-  [ Pino Toscano ]
-  * Restrict the clang Build-Depends to amd64 arm64 ppc64el, where CUDA exists.
-    (Closes: #994537)
+  * fix: x100 pts error
 
-  [ Sebastian Ramacher ]
-  * debian/control:
-    - Also enable cuda_llvm on i386
-    - Suggest packages for nvenc
+ -- liuheng <liuzheng@uniontech.com>  Wed, 12 Dec 2022 16:30:31 +0008
 
- -- Sebastian Ramacher <sramacher@debian.org>  Sat, 15 Jan 2022 17:49:38 +0100
+ffmpeg (7:4.1.9.6-deepin6) unstable; urgency=low
 
-ffmpeg (7:4.4.1-2) unstable; urgency=medium
+  * fix: ffmpeg-securityhole
 
-  * debian/control: Add Build-Depends on libffmpeg-nvenc-dev on amd64, arm64
-    and i386 (Closes: #925941)
+ -- muyuankai <muyuankai@uniontech.com>  Oct, 8 Sat 2022 16:30:31 +0000
 
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 21 Nov 2021 18:48:57 +0100
+ffmpeg (7:4.1.9.5-deepin5) unstable; urgency=low
 
-ffmpeg (7:4.4.1-1) unstable; urgency=medium
+  * fix: CVE-2020-20450
 
-  * New upstream version 4.4.1
-  * debian/tests: Limit the number of threads to max of 8
-  * debian/patches: Apply upstream patch to fix build on armhf with GCC 11
+ -- fengli <fengli@uniontech.com>  Wed, 24 Aug 2022 16:58:30 +0800
 
- -- Sebastian Ramacher <sramacher@debian.org>  Thu, 28 Oct 2021 21:43:55 +0200
+ffmpeg (7:4.1.9.4-1+dde) unstable; urgency=low
 
-ffmpeg (7:4.4-6) unstable; urgency=medium
+  * fix: CVE-2020-22039   CVE-2020-22044  CVE-2020-21697
 
-  * debian/*.symbols: Bump version of symbols to match upstream release
-  * debian/ffmpeg.maintscript: Drop removal of old conffile
+ -- fengli <fengli@uniontech.com>  Tue, 9 Aug 2022 16:11:30 +0800
 
- -- Sebastian Ramacher <sramacher@debian.org>  Thu, 09 Sep 2021 22:45:41 +0200
+ffmpeg (7:4.1.9.3-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix: xd patch 4.1.9 version                                            
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Tue, 19 Jul 2022 10:20:30 +0800
 
-ffmpeg (7:4.4-5) unstable; urgency=medium
+ffmpeg (7:4.1.9.2-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix: merge hisi patch 4.1.9 version                                            
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Mon, 18 Jul 2022 10:20:30 +0800
 
-  * Upload to unstable
-  * debian/control: Bump Standards-Version
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 22 Aug 2021 14:34:35 +0200
-
-ffmpeg (7:4.4-4) experimental; urgency=medium
-
-  * debian/rules:
-    - Add -latomic via --extra-libs
-    - Fix architecture check for libsmbclient
-
- -- Sebastian Ramacher <sramacher@debian.org>  Mon, 09 Aug 2021 12:29:18 +0200
-
-ffmpeg (7:4.4-3) experimental; urgency=medium
-
-  * debian/rules: Fix architecture check for -latomic
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 08 Aug 2021 23:11:58 +0200
-
-ffmpeg (7:4.4-2) experimental; urgency=medium
-
-  * debian/control: Fix Description of libswscale3 (Closes: #984795)
-  * debian/rules: Link with -latomic on armel and mipsel
-  * debian/:
-    - Properly disable libsmbclient support only on hurd-i386 (Closes:
-      #991558)
-    - Disable librvsg2 on even more ports architectures (Closes: #991556)
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 08 Aug 2021 21:38:36 +0200
-
-ffmpeg (7:4.4-1) experimental; urgency=medium
-
-  * New upstream release
-  * debian/control:
-    - Remove obsolete alternative BDs
-    - Bump libsmbclient-dev to 4.13 to avoid #984486
-    - Add clang to BD to enable cuda_llvm
-  * debian/:
-    - Remove --enable-libwavpack
-    - Remove --enable-liblensfun. liblensfun support is currently incompatible
-      with any of the released liblensfun versions.
-  * debian/patches: Drop patches from upstream
-  * debian/copyright: Update copyright years
-  * debian/*.symbols: Add new symbols
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 11 Apr 2021 15:09:21 +0200
-
-ffmpeg (7:4.3.2-2) experimental; urgency=medium
-
-  * debian/:
-    - Build with zimg (Closes: #966059)
-    - Disable librsvg on hppa and sh4 (Closes: #983344)
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 28 Feb 2021 14:49:11 +0100
-
-ffmpeg (7:4.3.2-1) experimental; urgency=medium
-
-  * New upstream release
-  * debian/control: Add libgl-dev as alternative Build-Depends
-  * debian/patches: Remove patches integrated upstream
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 21 Feb 2021 22:15:58 +0100
-
-ffmpeg (7:4.3.1-9) experimental; urgency=medium
-
-  [ Fabian Greffrath ]
-  * add a libavformat-extra package that contains additional (de)muxers
-    (Closes: #972897)
-
-  [ Sebastian Ramacher ]
-  * debian/control:
-    - Remove empty Pre-Depends
-    - Add myself to Uploaders
-    - Remove Andreas Cadhalpun und Alexander Strasser from Uploaders. They are
-      no longer active.
-    - Remove obsolete Breaks+Replaces
-  * debian/: Remove deprecated libavresample (Closes: #971318)
-  * debian/copyright: Restore compatibility with Copyright-Format 1.0
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 21 Feb 2021 16:33:16 +0100
-
-ffmpeg (7:4.3.1-8) unstable; urgency=medium
-
-  * Team upload
-  * debian/patches: pusdec: do not fail when LBRR frames are present
-
- -- Sebastian Ramacher <sramacher@debian.org>  Tue, 26 Jan 2021 19:54:17 +0100
-
-ffmpeg (7:4.3.1-7) unstable; urgency=medium
-
-  * Team upload
-
-  [ Vasyl Gello ]
-  * Keep libfreetype6-dev as alternative dep for buster-bpo
-
-  [ Sebastian Ramacher ]
-  * debian/patches:
-    - Apply upstream patches for srt 1.4.1
-    - Fix build on powerpc and ppc64 (Closes: #968574)
-  * debian/: Revert "Temporarily disable srt support" (Closes: #975988,
-    #972556)
-
- -- Sebastian Ramacher <sramacher@debian.org>  Tue, 19 Jan 2021 20:36:50 +0100
-
-ffmpeg (7:4.3.1-6) unstable; urgency=medium
-
-  * Team upload
-  * debian/control:
-    - Bump Standards-Version
-    - Drop obsolete Build-Depends
-    - Switch to libfontconfig-dev and libfreetype-dev
-  * debian/patches:
-    - Fix out-of-bounds write in libavcodec/exr.c (Closes: #980000)
-      (CVE-2020-35964)
-    - Fix out-of-bounds write in libavcodec/vividas.c (Closes: #979999)
-      (CVE-2020-35965)
-
- -- Sebastian Ramacher <sramacher@debian.org>  Tue, 12 Jan 2021 20:48:08 +0100
-
-ffmpeg (7:4.3.1-5) unstable; urgency=medium
-
-  * Team upload
-  * debian/: Temporarily disable libsrt support (see #972556 and #971754)
-    Once libsrt provides a stable ABI, support can be reenabled.
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sun, 25 Oct 2020 09:38:59 +0100
-
-ffmpeg (7:4.3.1-4) unstable; urgency=medium
-
-  * Team upload
-  * debian/control: Switch to libdc1394-dev
-
- -- Sebastian Ramacher <sramacher@debian.org>  Tue, 22 Sep 2020 22:22:44 +0200
-
-ffmpeg (7:4.3.1-3) unstable; urgency=medium
-
-  * Team upload
-
-  [ Jonas Smedegaard ]
-  * update git-buildpackage config:
-    + use signed tags
-    + filter any .git* file
-  * fix typo in README.Debian
-  * drop lintian override for typo fixed upstream
-  * remove myelf as uploader
-
-  [ Debian Janitor ]
-  * Set upstream metadata fields: Repository.
-
-  [ Sebastian Ramacher ]
-  * Set Bug-Database, Repository-Browse and Security-Contact
-
-  [ Pino Toscano ]
-  * Disable pocketsphinx on few more architectures
-
- -- Sebastian Ramacher <sramacher@debian.org>  Sat, 12 Sep 2020 18:15:33 +0200
-
-ffmpeg (7:4.3.1-2) unstable; urgency=medium
-
-  * avoid linking with pocketsphinx on bigendian archs;
-    closes: bug#968456, thanks to John David Anglin
-
- -- Jonas Smedegaard <dr@jones.dk>  Sat, 15 Aug 2020 23:08:50 +0200
-
-ffmpeg (7:4.3.1-1) unstable; urgency=high
-
-  [ upstream ]
-  * new maintenance release
-    + fix libavformat heap-based buffer overflow in avio_get_str
-      (CVE-2020-14212)
-    + fix libavformat use-after-free in hls
-      (CVE-2020-13904)
-
-  [ Jonas Smedegaard ]
-  * add patch cherry-picked upstream
-    to avoid libswscale segfault on SSSE3 capable systems
-    closes: bug#964312, thanks to Jörg Schütter
-  * Document omitted features in README.Debian and TODO.Debian
-    (not rules file comments)
-  * use debhelper compatibility level 12 (not 13)
-  * set urgency=high due to security-related bugfixes
-
- -- Jonas Smedegaard <dr@jones.dk>  Tue, 04 Aug 2020 16:10:03 +0200
-
-ffmpeg (7:4.3-3) unstable; urgency=medium
-
-  * link with dav1d;
-    build-depend on libdav1d-dev
-  * build-depend on libbrotli-dev
-    (as temporary workaround, see bug#964185)
-
- -- Jonas Smedegaard <dr@jones.dk>  Fri, 03 Jul 2020 17:57:57 +0200
-
-ffmpeg (7:4.3-2) unstable; urgency=medium
-
-  * use debhelper compatibility level 12 (not 11);
-    skip dwz for most libraries to avoid error: Unknown DWARF DW_OP_0
-  * reduce and simplify shell code in make rules
-
- -- Jonas Smedegaard <dr@jones.dk>  Wed, 17 Jun 2020 15:15:20 +0200
-
-ffmpeg (7:4.3-1) experimental; urgency=medium
-
-  [ upstream ]
-  * new feature release
-
-  [ Jonas Smedegaard ]
-  * link with RabbitMQ;
-    build-depend on librabbitmq-dev
-  * update comments in rules file about omitted linkage
-  * stop enable AviSynth: embedded code dropped upstream
-  * drop patch 002, applied upstream
-  * explicitly reuse symbols files (drop symbolic links),
-    to not confuse pkgkde-symbolshelper
-  * sort symbols, and move comments to README.source
-  * briefly document use of pkgkde-symbolshelper in README.source
-  * update symbols, including dropped avfilter symbols
-    avfilter_all_channel_layouts avfilter_get_matrix
-    (seemingly private and unused anywhere in Debian)
-
- -- Jonas Smedegaard <dr@jones.dk>  Tue, 16 Jun 2020 19:20:15 +0200
-
-ffmpeg (7:4.2.3-2) unstable; urgency=medium
-
-  * copyright:
-    + use License-Grant and License-Reference;
-      add lintian overrides (see bug#786450)
-    + update coverage
-  * stop mention SOFAlizer in libavfilter-extra* long description:
-    dropped since upstream release 3.4
-  * simplify rules:
-    explicitly reuse symbols files (and drop symbolic links)
-  * watch: revert to set pgpsigurlmangle
-    (not pgpmode=auto: we want to fail if signature file is missing)
-  * use pkgkde-symbolshelper;
-    build-depend on pkg-kde-tools
-
- -- Jonas Smedegaard <dr@jones.dk>  Tue, 16 Jun 2020 18:44:49 +0200
-
-ffmpeg (7:4.2.3-1) unstable; urgency=medium
-
-  [ upstream ]
-  * new maintenance release
-
-  [ Jonas Smedegaard ]
-  * link with Pocket Sphinx where available (see bug#812335);
-    build-depend on recent libpocketsphinx-dev (see bug#941377)
-  * watch:
-    + use file format 4
-    + set pgpmode=auto
-    + set dversionmangle=auto
-    + use pattern strings
-    + add usage comment
-
- -- Jonas Smedegaard <dr@jones.dk>  Tue, 16 Jun 2020 11:58:44 +0200
-
-ffmpeg (7:4.2.2-3) unstable; urgency=medium
-
-  * fix limit libmfx linking to amd64,
-    to match availability of the library
-
- -- Jonas Smedegaard <dr@jones.dk>  Wed, 10 Jun 2020 17:10:49 +0200
-
-ffmpeg (7:4.2.2-2) unstable; urgency=medium
-
-  * link with libsrt;
-    build-depend on libsrt-gnutls-dev;
-    closes: bug#960140, thanks to Kyle Robbertze
-  * add myself as uploader
-  * link with libmfx;
-    build-depend on libmfx-dev;
-    closes: bug#955130, thanks to Tom Yang
-
- -- Jonas Smedegaard <dr@jones.dk>  Wed, 10 Jun 2020 13:53:47 +0200
-
-ffmpeg (7:4.2.2-1) unstable; urgency=medium
-
-  [ James Cowgill ]
-  * New upstream release.
-
-  * d/control:
-    - Change lib*-extra packages to arch any.
-    - Tighten dependencies from libav*-extra packages.
-    - Bump standards version to 4.5.0.
-  * d/rules: Enable opencl (Closes: #944005)
-
-  [ Steve Langasek ]
-  * d/tests: Make autopkgtests cross-test-friendly. (Closes: #946241)
-
- -- James Cowgill <jcowgill@debian.org>  Sat, 25 Jan 2020 16:22:32 +0000
-
-ffmpeg (7:4.2.1-2) unstable; urgency=medium
-
-  * d/patches:
-    - avcodec/libtwolame: fix mono default bitrate. (Closes: #943900)
-  * d/tests:
-    - Replace remaining occurrences of ADTTMP.
-
- -- James Cowgill <jcowgill@debian.org>  Sat, 02 Nov 2019 01:17:31 +0000
-
-ffmpeg (7:4.2.1-1) unstable; urgency=medium
+ffmpeg (7:4.1.9.1-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix: merge new upstream 4.1.9 version                                            
+                                                                                        
+ -- fengli <fengli@uniontech.com>  Mon, 11 Jul 2022 15:20:30 +0800
+ 
+ffmpeg (7:4.1.9-0+deb10u1) buster-security; urgency=medium
 
   * New upstream release.
-    - avcodec/vqavideo: Set video size. (CVE-2019-17542)
-    - avcodec/utils: Check close before calling it. (CVE-2019-17539)
+    - Drop 0001-fix-mxfenc-index.patch, contained in new release
 
-  * d/copyright: Various copyright updates for 4.2.
-  * d/patches: Add patch to fix sbcenc segfault on armhf.
-  * d/rules:
-    - Enable libartbb24.
-    - Disable MSA2.
-    - Update list of non-enabled libraries.
-  * d/*.symbols: Updates for 4.2.
-  * d/tests: Update encdec lists with 4.2 additions.
+ -- Moritz Mühlenhoff <jmm@debian.org>  Wed, 27 Apr 2022 00:11:27 +0200
 
- -- James Cowgill <jcowgill@debian.org>  Mon, 28 Oct 2019 18:14:56 +0000
+ffmpeg (7:4.1.8.11-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix: ffmpeg 4.1.8  hisi patch                                            
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Fri, 1 Jul 2022 10:22:30 +0800
 
-ffmpeg (7:4.1.4-1) unstable; urgency=medium
+ffmpeg (7:4.1.8.10-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix: ffmpeg 4.1.8  nvenc                                            
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Mon, 14 Mar 2022 15:22:30 +0800
 
-  [ James Cowgill ]
-  * New upstream release. (LP: #1837480)
-    - avformat/aadec: Check for scanf() failure (CVE-2019-12730)
-      (Closes: #932469)
+ffmpeg (7:4.1.8.9-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix CVE-2020-20451 CVE-2020-20891 CVE-2020-20892  CVE-2020-20896                                             
+                                                                                        
+ -- fengli <fengli@uniontech.com>  Mon, 07 Mar 2022 10:39:30 +0800
 
-  * d/copyright: Remove paragraph containing license files.
-  * d/control: Bump standards version to 4.4.0.
-  * d/ffmpeg-doc.doc-base*:
-    - Move API docs to Programming/C section.
-    - Index the main manual pages as well.
-      Thanks to 積丹尼 Dan Jacobson for the suggestion. (Closes: #924528)
-  * d/rules:
-    - Disable crystalhd. (Closes: #917292)
-    - Generate index.html file for the HTML manual pages.
+ffmpeg (7:4.1.8.8-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix CVE-2020-20898
+        CVE-2021-38094
+        CVE-2021-38093
+        CVE-2021-38092
+        CVE-2021-38091
+        CVE-2021-38090
+        
+ -- fengli <fengli@uniontech.com>  Tue, 1 Mar 2022 15:51:30 +0800
 
-  [ Ondřej Nový ]
-  * d/control:
-    - Use debhelper-compat instead of debian/compat.
+ffmpeg (7:4.1.8.7-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * remove patch: fix ft-x100 patch                                               
+                                                                                        
+ -- hemingyang <hemingyang@uniontech.com>  Wed, 23 Feb 2022 10:35:30 +0800
 
- -- James Cowgill <jcowgill@debian.org>  Sat, 27 Jul 2019 11:24:18 +0100
+ffmpeg (7:4.1.8.6-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix: fix ft-x100 patch                                               
+                                                                                        
+ -- zhuyuliang <zhuyuliang@uniontech.com>  Fri, 26 Jan 2022 15:30:30 +0800
+
+ffmpeg (7:4.1.8.5-1+dde) unstable; urgency=low
+
+  * fix: fix do not read undersized frames of pulse
+
+ -- hemingyang <hemingyang@uniontech.com>  Fri, 14 Jan 2022 10:30:30 +0800
+
+ffmpeg (7:4.1.8.4-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * Add loongson 5000  patch                                               
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Tue, 04 Jan 2022 13:30:30 +0800
+
+ffmpeg (7:4.1.8.3-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * Add ft x100 omx hwaccel support                                                
+                                                                                        
+ -- zhuyuliang <zhuyuliang@uniontech.com>  Fri, 31 Dec 2021 13:30:30 +0800
+
+ffmpeg (7:4.1.8.2-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix:add avs2  for ffmpeg 4.1.8                                                 
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Fri, 26 Nov 2021 15:22:30 +0800
+
+ffmpeg (7:4.1.8.1-1+dde) unstable; urgency=low                                         
+                                                                                        
+  * fix:update 4.1.6 patch                                                   
+                                                                                        
+ -- muyuankai <muyuankai@uniontech.com>  Thu, 10 Oct 2021 15:22:30 +0800
+
+ffmpeg (7:4.1.8-0+deb10u1) buster-security; urgency=high
+
+  [ Sebastian Ramacher ]
+  * New upstream release
+    - Fixes various security issues:
+      CVE-2020-21041
+      CVE-2020-22017
+      CVE-2020-22019
+      CVE-2020-22020
+      CVE-2020-22021
+      CVE-2020-22022
+      CVE-2020-22023
+      CVE-2020-22025
+      CVE-2020-22026
+      CVE-2020-22027
+      CVE-2020-22028
+      CVE-2020-22029
+      CVE-2020-22030
+      CVE-2020-22031
+      CVE-2020-22032
+      CVE-2020-22033
+      CVE-2020-22034
+      CVE-2020-22035
+      CVE-2020-22036
+      CVE-2020-35965
+      CVE-2021-38114
+      CVE-2021-38171
+  * debian/gbp.conf Switch upstream branch to upstream/buster
+  * debian/tests: Update encoders based on changes in 4.1.6
+
+  [ Antoni Villalonga ]
+  * debian/patches: Backport upstream patch to fix MXF generation (Closes:
+    #977541)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Tue, 05 Oct 2021 10:49:21 +0200
+
+ffmpeg (7:4.1.6-1~deb10u1) buster-security; urgency=medium
+
+  * New upstream release
+
+ -- Moritz Mühlenhoff <jmm@debian.org>  Tue, 07 Jul 2020 18:50:33 +0200
+
+ffmpeg (7:4.1.4-1~deb10u1) buster-security; urgency=medium
+
+  * New upstream release
+
+ -- Moritz Mühlenhoff <jmm@debian.org>  Fri, 16 Aug 2019 00:05:06 +0200
 
 ffmpeg (7:4.1.3-1) unstable; urgency=high
 

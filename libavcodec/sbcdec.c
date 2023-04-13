@@ -30,10 +30,10 @@
  * SBC decoder implementation
  */
 
+#include <stdbool.h>
 #include "avcodec.h"
 #include "internal.h"
 #include "libavutil/intreadwrite.h"
-#include "libavutil/mem_internal.h"
 #include "sbc.h"
 #include "sbcdec_data.h"
 
@@ -324,8 +324,6 @@ static int sbc_decode_init(AVCodecContext *avctx)
     SBCDecContext *sbc = avctx->priv_data;
     int i, ch;
 
-    avctx->sample_fmt = AV_SAMPLE_FMT_S16P;
-
     sbc->frame.crc_ctx = av_crc_get_table(AV_CRC_8_EBU);
 
     memset(sbc->dsp.V, 0, sizeof(sbc->dsp.V));
@@ -350,8 +348,9 @@ static int sbc_decode_frame(AVCodecContext *avctx,
     if (frame_length <= 0)
         return frame_length;
 
-    avctx->channels = sbc->frame.channels;
-
+    avctx->channels =
+    frame->channels = sbc->frame.channels;
+    frame->format = AV_SAMPLE_FMT_S16P;
     frame->nb_samples = sbc->frame.blocks * sbc->frame.subbands;
     if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
         return ret;
@@ -371,7 +370,7 @@ AVCodec ff_sbc_decoder = {
     .priv_data_size        = sizeof(SBCDecContext),
     .init                  = sbc_decode_init,
     .decode                = sbc_decode_frame,
-    .capabilities          = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_CHANNEL_CONF,
+    .capabilities          = AV_CODEC_CAP_DR1,
     .caps_internal         = FF_CODEC_CAP_INIT_THREADSAFE,
     .channel_layouts       = (const uint64_t[]) { AV_CH_LAYOUT_MONO,
                                                   AV_CH_LAYOUT_STEREO, 0},
