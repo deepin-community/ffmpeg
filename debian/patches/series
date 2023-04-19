@@ -11,3 +11,4 @@ uniontech-CVE-2020-22039.patch
 uniontech-CVE-2020-22044.patch
 uniontech-CVE-2020-20450.patch
 ffmpeg-securityhole.patch
+xd-ffmpeg-uos.patch
