@@ -221,7 +221,82 @@ static void fill_vaapi_plain_pred_weight_table(const H264Context *h,
         }
     }
 }
+static int get_h264_nals_size(int index, H2645NAL *nals)
+{
+    //          NALU
+    //   3 or 4   |    1   | ...
+    //  --------------------------
+    //  |startCode| header | body|   startCode:00 00 01 or 00 00 00 01
+    //  -------------------------
+    //                        |
+    //                        V
+    //                       EBSP
+    //              --------------------------
+    //              |00 00 00 -> 00 00 03 00 |
+    //              |00 00 01 -> 00 00 03 01 |
+    //              |00 00 02 -> 00 00 03 02 |
+    //              |00 00 03 -> 00 00 03 03 |
+    //              --------------------------
+    //                        |remove 0x03
+    //                        V
+    //                       RBSP
+    //              ----------------------------
+    //              |SODB|StopBit|AlignmentBits|
+    //              ----------------------------
+    //               ... |   1   |  8 bit Alignment
+    // size_bits : SODB bit size
+    // nal_size = header + 03*N + SODB/8 + ((SODB % 8)?1:0)
 
+    //the last byte of nal body must not be 0 ,because is always end of stopBit 1.
+    int raw_size = nals[index].raw_size;
+    uint8_t last = nals[index].raw_data[raw_size - 1];
+    int nal_size = (last != 0x00) ? raw_size : (raw_size - 1);
+    return nal_size;
+}
+
+static int h264_parse_extradata(AVCodecContext *avctx ,uint8_t *header, int *seq_len)
+{
+    int ret =0;
+    const uint8_t *data =  avctx->extradata;
+    int size  = avctx->extradata_size;
+    int i, sps_cnt, pps_cnt;
+    uint32_t nalsize;
+    uint32_t sps_size = 0;
+    uint32_t pps_size  =0;
+    unsigned char nal_prefix[4]  ={0,0,0,1};
+    uint32_t pos = 0;
+    if (size <= 0 && !data)
+        return -1;
+    if (size < 7) {
+        av_log(avctx, AV_LOG_DEBUG, "[%s:%d:%s]  avcC %d too short\n",
+               __FILE__,__LINE__,__FUNCTION__, size);
+        return AVERROR_INVALIDDATA;
+    }
+    sps_cnt = *(data + 5) & 0x1f; // Number of sps
+    data  += 6;
+    for (i = 0; i < sps_cnt; i++) {
+        nalsize = (*data << 8) + *(data + 1) + 2;
+        memcpy(header +pos, nal_prefix, sizeof(nal_prefix));
+        pos += sizeof(nal_prefix);
+        memcpy(header + pos, data+2, nalsize-2);
+        data += nalsize;
+        sps_size = nalsize - 2;
+        pos += sps_size;
+    }
+    pps_cnt = *(data++); // number of pps
+    for (i = 0; i < pps_cnt; i++) {
+        nalsize = (*data << 8) + *(data + 1) + 2;
+        memcpy(header +pos, nal_prefix, sizeof(nal_prefix));
+        pos += sizeof(nal_prefix);
+        memcpy(header + pos, data+2, nalsize-2);
+        data += nalsize;
+        pps_size = nalsize - 2;
+        pos += pps_size;
+    }
+    *seq_len = pos;
+
+    return ret;
+}
 /** Initialize and start decoding a frame with VA API. */
 static int vaapi_h264_start_frame(AVCodecContext          *avctx,
                                   av_unused const uint8_t *buffer,
@@ -234,6 +309,74 @@ static int vaapi_h264_start_frame(AVCodecContext          *avctx,
     VAPictureParameterBufferH264 pic_param;
     VAIQMatrixBufferH264 iq_matrix;
     int err;
+    int i;
+    int sps_pps_count = 0;
+    const H2645Packet *pkt = &h->pkt;
+    VAAPIDecodeContext *ctx = avctx->internal->hwaccel_priv_data;
+
+    if (h->nal_unit_type == H264_NAL_IDR_SLICE && (!strncmp(ctx->va_dirver_name, "INNO", 4))) {
+        int pos = 0;
+        unsigned char nal_prefix[4] = {0, 0, 0, 1};
+        unsigned char data[VA_INNO_HEAD_SIZE];
+
+        av_log(avctx, AV_LOG_DEBUG, "[%s:%d:%s]  nb_nals =%d \n", __FILE__,__LINE__,__FUNCTION__,pkt->nb_nals);
+        memset(data, 0x00, sizeof(data));
+        for (i= 0; i < pkt->nb_nals; i++) {
+            int type = pkt->nals[i].type;
+            int size = get_h264_nals_size(i,pkt->nals);
+            if (type == H264_NAL_SEI || type == H264_NAL_SPS || type == H264_NAL_PPS) {
+                // 00 00 00 01
+                memcpy(data + pos, nal_prefix, sizeof(nal_prefix));
+                pos = pos + sizeof(nal_prefix);
+
+                // sei  or sps or pps
+                memcpy(data + pos, pkt->nals[i].raw_data, size);
+                pos = pos + size;
+            }
+            if (type == H264_NAL_SPS || type == H264_NAL_PPS) {
+                sps_pps_count++;
+            }
+        }
+        //first frame must have sps and pps, if not, must taken from extradata
+        if ((sps_pps_count == 2) && (ctx->found_header == 0)) {
+            ctx->found_header = 1;
+        } else if ((sps_pps_count < 2) && (ctx->found_header == 0)) {
+            memset(data, 0x00, sizeof(data));
+            pos = 0;
+        }
+        // find sps pps
+        if (avctx->extradata_size > 0 && avctx->extradata && !ctx->found_header) {
+        uint8_t *nals = avctx->extradata;
+            if (((nals[0] == 0) && (nals[1] == 0) && (nals[2] == 0) && (nals[3] == 1) && ((nals[4] & 0x1f) == H264_NAL_SPS))
+                || ((nals[0] == 0) && (nals[1] == 0) && (nals[2] == 1) && ((nals[3] & 0x1f) == H264_NAL_SPS))) {
+                //directly copy not parse
+                memcpy(data + pos, nals, avctx->extradata_size);
+                pos += avctx->extradata_size;
+            } else {
+                int seq_len = 0;
+                uint8_t *seq_header = av_malloc(avctx->extradata_size);
+                if (seq_header == NULL) {
+                    av_log(avctx, AV_LOG_DEBUG, "failed to malloc.\n");
+                    goto fail;
+                }
+                memset(seq_header,0,avctx->extradata_size);
+                h264_parse_extradata(avctx,seq_header,&seq_len);
+                if (seq_len) {
+                    memcpy(data + pos,seq_header ,seq_len);
+                    pos += seq_len;
+                }
+                free(seq_header);
+            }
+            ctx->found_header =1;
+        }
+        err = ff_vaapi_decode_make_param_buffer(avctx, pic, VABitPlaneBufferType,  data, pos);
+
+        av_log(avctx, AV_LOG_DEBUG, "VABitPlaneBufferType  err=%d len=%d \n",err,pos);
+        if (err < 0) {
+           ctx->found_header = 0;
+           goto fail;
+        }
+    }
 
     pic->output_surface = ff_vaapi_get_surface_id(h->cur_pic_ptr->f);
 
@@ -315,6 +458,7 @@ static int vaapi_h264_end_frame(AVCodecContext *avctx)
     const H264Context *h = avctx->priv_data;
     VAAPIDecodePicture *pic = h->cur_pic_ptr->hwaccel_picture_private;
     H264SliceContext *sl = &h->slice_ctx[0];
+    VAAPIDecodeContext *ctx  = avctx->internal->hwaccel_priv_data;
     int ret;
 
     ret = ff_vaapi_decode_issue(avctx, pic);
@@ -324,6 +468,8 @@ static int vaapi_h264_end_frame(AVCodecContext *avctx)
     ff_h264_draw_horiz_band(h, sl, 0, h->avctx->height);
 
 finish:
+    if (ret < 0 && (!strncmp(ctx->va_dirver_name, "INNO",4)))
+        ctx->found_header = 0;
     return ret;
 }
 

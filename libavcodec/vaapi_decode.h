@@ -32,6 +32,8 @@
 #include "vaapi.h"
 #endif
 
+#define VA_DRIVER_NAME_LEN      (256)
+#define VA_INNO_HEAD_SIZE       (8192)
 static inline VASurfaceID ff_vaapi_get_surface_id(AVFrame *pic)
 {
     return (uintptr_t)pic->data[3];
@@ -74,6 +76,8 @@ FF_ENABLE_DEPRECATION_WARNINGS
     int                   surface_count;
 
     VASurfaceAttrib       pixel_format_attribute;
+    int                   found_header;         /*header flag*/
+    char                  va_dirver_name[VA_DRIVER_NAME_LEN];       /*driver name*/
 } VAAPIDecodeContext;
 
 

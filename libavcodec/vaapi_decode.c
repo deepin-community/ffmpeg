@@ -612,6 +612,7 @@ int ff_vaapi_decode_init(AVCodecContext *avctx)
     VAAPIDecodeContext *ctx = avctx->internal->hwaccel_priv_data;
     VAStatus vas;
     int err;
+    const char *vendor_string;
 
     ctx->va_config  = VA_INVALID_ID;
     ctx->va_context = VA_INVALID_ID;
@@ -688,7 +689,12 @@ int ff_vaapi_decode_init(AVCodecContext *avctx)
 #if FF_API_STRUCT_VAAPI_CONTEXT
     }
 #endif
-
+    vendor_string = vaQueryVendorString(ctx->hwctx->display);
+    if (vendor_string) {
+        memset(ctx->va_dirver_name, 0, sizeof(ctx->va_dirver_name));
+        memcpy(ctx->va_dirver_name, vendor_string, sizeof(ctx->va_dirver_name));
+        ctx->found_header  = 0;
+    }
     return 0;
 
 fail:
