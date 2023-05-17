@@ -9,7 +9,7 @@ Index: ffmpeg/configure
 +h264_omx_decoder_deps="omx"
  h264_amf_encoder_deps="amf"
  h264_crystalhd_decoder_select="crystalhd h264_mp4toannexb_bsf h264_parser"
- h264_cuvid_decoder_deps="cuvid"AVCodecContext *avctx.
+ h264_cuvid_decoder_deps="cuvid"
 @@ -2974,6 +2975,7 @@ h264_vaapi_encoder_select="cbs_h264 vaap
  h264_v4l2m2m_decoder_deps="v4l2_m2m h264_v4l2_m2m"
  h264_v4l2m2m_decoder_select="h264_mp4toannexb_bsf"
