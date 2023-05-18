@@ -1,0 +1,523 @@
+From 95a87430a309ea304f819c60bbbbf0e620d6c147 Mon Sep 17 00:00:00 2001
+From: jinbo <jinbo@loongson.cn>
+Date: Wed, 29 Mar 2023 14:21:23 +0800
+Subject: [PATCH 07/10] swscale [mips]: Add following msa optimizations
+
+yuv420_rgb24_msa
+yuv420_bgr24_msa
+yuv420_rgba32_msa
+yuv420_argb32_msa
+yuv420_bgra32_msa
+yuv420_abgr32_msa
+
+Change-Id: I2a04879d5cf59a89aa551a1f8ca611452b9c108c
+---
+ libswscale/mips/Makefile            |   1 +
+ libswscale/mips/swscale_init_mips.c |  36 +++
+ libswscale/mips/swscale_mips.h      |  19 ++
+ libswscale/mips/yuv2rgb_msa.c       | 385 ++++++++++++++++++++++++++++
+ libswscale/swscale_internal.h       |   1 +
+ libswscale/yuv2rgb.c                |   2 +
+ 6 files changed, 444 insertions(+)
+ create mode 100644 libswscale/mips/yuv2rgb_msa.c
+
+diff --git a/libswscale/mips/Makefile b/libswscale/mips/Makefile
+index 48c2425eff..8721561930 100644
+--- a/libswscale/mips/Makefile
++++ b/libswscale/mips/Makefile
+@@ -2,3 +2,4 @@ OBJS     += mips/swscale_init_mips.o
+ OBJS     += mips/rgb2rgb_init_mips.o
+ MSA-OBJS += mips/swscale_msa.o
+ MSA-OBJS += mips/rgb2rgb_msa.o
++MSA-OBJS += mips/yuv2rgb_msa.o
+diff --git a/libswscale/mips/swscale_init_mips.c b/libswscale/mips/swscale_init_mips.c
+index 8e26486f1e..4ed8b1b172 100644
+--- a/libswscale/mips/swscale_init_mips.c
++++ b/libswscale/mips/swscale_init_mips.c
+@@ -209,3 +209,39 @@ av_cold void ff_sws_init_swscale_mips(SwsContext *c)
+     }
+ #endif /* #if HAVE_MSA */
+ }
++
++av_cold SwsFunc ff_yuv2rgb_init_mips(SwsContext *c)
++{
++    int cpu_flags = av_get_cpu_flags();
++#if HAVE_MSA
++    if (have_msa(cpu_flags)) {
++        switch (c->dstFormat) {
++            case AV_PIX_FMT_RGB24:
++                return yuv420_rgb24_msa;
++            case AV_PIX_FMT_BGR24:
++                return yuv420_bgr24_msa;
++            case AV_PIX_FMT_RGBA:
++                if (CONFIG_SWSCALE_ALPHA && isALPHA(c->srcFormat)) {
++                    break;
++                } else
++                    return yuv420_rgba32_msa;
++            case AV_PIX_FMT_ARGB:
++                if (CONFIG_SWSCALE_ALPHA && isALPHA(c->srcFormat)) {
++                    break;
++                } else
++                    return yuv420_argb32_msa;
++            case AV_PIX_FMT_BGRA:
++                if (CONFIG_SWSCALE_ALPHA && isALPHA(c->srcFormat)) {
++                    break;
++                } else
++                    return yuv420_bgra32_msa;
++            case AV_PIX_FMT_ABGR:
++                if (CONFIG_SWSCALE_ALPHA && isALPHA(c->srcFormat)) {
++                    break;
++                } else
++                    return yuv420_abgr32_msa;
++        }
++    }
++    return NULL;
++#endif
++}
+diff --git a/libswscale/mips/swscale_mips.h b/libswscale/mips/swscale_mips.h
+index ff30593e0d..683b3f5c72 100644
+--- a/libswscale/mips/swscale_mips.h
++++ b/libswscale/mips/swscale_mips.h
+@@ -401,4 +401,23 @@ void planar_rgb_to_uv_msa(uint8_t *_dstU, uint8_t *_dstV, const uint8_t *src[4],
+ void planar_rgb_to_y_msa(uint8_t *_dst, const uint8_t *src[4], int width,
+                          int32_t *rgb2yuv);
+ 
++int yuv420_rgb24_msa(SwsContext *c, const uint8_t *src[], int srcStride[],
++                     int srcSliceY, int srcSliceH, uint8_t *dst[], int dstStride[]);
++
++int yuv420_bgr24_msa(SwsContext *c, const uint8_t *src[], int srcStride[],
++                     int srcSliceY, int srcSliceH, uint8_t *dst[], int dstStride[]);
++
++int yuv420_rgba32_msa(SwsContext *c, const uint8_t *src[], int srcStride[],
++                      int srcSliceY, int srcSliceH, uint8_t *dst[], int dstStride[]);
++
++int yuv420_bgra32_msa(SwsContext *c, const uint8_t *src[], int srcStride[],
++                      int srcSliceY, int srcSliceH, uint8_t *dst[], int dstStride[]);
++
++int yuv420_argb32_msa(SwsContext *c, const uint8_t *src[], int srcStride[],
++                      int srcSliceY, int srcSliceH, uint8_t *dst[], int dstStride[]);
++
++int yuv420_abgr32_msa(SwsContext *c, const uint8_t *src[], int srcStride[],
++                      int srcSliceY, int srcSliceH, uint8_t *dst[], int dstStride[]);
++
++
+ #endif /* SWSCALE_MIPS_SWSCALE_MIPS_H */
+diff --git a/libswscale/mips/yuv2rgb_msa.c b/libswscale/mips/yuv2rgb_msa.c
+new file mode 100644
+index 0000000000..33e951f6ba
+--- /dev/null
++++ b/libswscale/mips/yuv2rgb_msa.c
+@@ -0,0 +1,385 @@
++/*
++ * Copyright (C) 2023 Loongson Technology Co. Ltd.
++ * Contributed by jinbo(jinbo@loongson.cn)
++ * All rights reserved.
++ *
++ * This file is part of FFmpeg.
++ *
++ * FFmpeg is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * FFmpeg is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with FFmpeg; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include "swscale_mips.h"
++#include "libavutil/mips/generic_macros_msa.h"
++
++//Using ST_D1 will result in great regression, reason is not clear.
++#define SD_NEW(val, pdst)                             \
++{                                                     \
++    uint64_t *pdst_sd_m = (uint64_t *) (pdst);        \
++    *pdst_sd_m = (val);                               \
++}
++
++#define YUV2RGB_LOAD_COE                              \
++    /* Load x_offset */                               \
++    v8i16 y_offset = (v8i16)__msa_fill_d(c->yOffset); \
++    v8i16 u_offset = (v8i16)__msa_fill_d(c->uOffset); \
++    v8i16 v_offset = (v8i16)__msa_fill_d(c->vOffset); \
++    /*Load x_coeff */                                 \
++    v8i16 ug_coeff = (v8i16)__msa_fill_d(c->ugCoeff); \
++    v8i16 vg_coeff = (v8i16)__msa_fill_d(c->vgCoeff); \
++    v8i16 y_coeff  = (v8i16)__msa_fill_d(c->yCoeff);  \
++    v8i16 ub_coeff = (v8i16)__msa_fill_d(c->ubCoeff); \
++    v8i16 vr_coeff = (v8i16)__msa_fill_d(c->vrCoeff); \
++
++#define LOAD_YUV_16                                      \
++    m_y1   = LD_SB(py_1);                                \
++    m_y2   = LD_SB(py_2);                                \
++    m_u    = LD_SB(pu);                                  \
++    m_v    = LD_SB(pv);                                  \
++    m_u    = __msa_ilvr_b((v16i8)m_u, (v16i8)m_u);       \
++    m_v    = __msa_ilvr_b((v16i8)m_v, (v16i8)m_v);       \
++    m_u_l  = __msa_ilvl_b(zero, (v16i8)m_u);             \
++    m_u    = __msa_ilvr_b(zero, (v16i8)m_u);             \
++    m_v_l  = __msa_ilvl_b(zero, (v16i8)m_v);             \
++    m_v    = __msa_ilvr_b(zero, (v16i8)m_v);             \
++    m_y1_l = __msa_ilvl_b(zero, (v16i8)m_y1);            \
++    m_y1   = __msa_ilvr_b(zero, (v16i8)m_y1);            \
++    m_y2_l = __msa_ilvl_b(zero, (v16i8)m_y2);            \
++    m_y2   = __msa_ilvr_b(zero, (v16i8)m_y2);            \
++
++#define MUH_H(in0, in1, in2, in3, out0)                  \
++{                                                        \
++    v4i32 tmp0, tmp1;                                    \
++    tmp0 = in0 * in1;                                    \
++    tmp1 = in2 * in3;                                    \
++    out0 = __msa_pckod_h((v8i16)tmp1, (v8i16)tmp0);      \
++}
++
++#define YUV2RGB(y1, y2, u, v, r1, g1, b1, r2, g2, b2)   \
++{                                                       \
++    y1 = (v16i8)__msa_slli_h((v8i16)y1, 3);             \
++    y2 = (v16i8)__msa_slli_h((v8i16)y2, 3);             \
++    u  = (v16i8)__msa_slli_h((v8i16)u, 3);              \
++    v  = (v16i8)__msa_slli_h((v8i16)v, 3);              \
++    y1 = (v16i8)__msa_subv_h((v8i16)y1, y_offset);      \
++    y2 = (v16i8)__msa_subv_h((v8i16)y2, y_offset);      \
++    u  = (v16i8)__msa_subv_h((v8i16)u, u_offset);       \
++    v  = (v16i8)__msa_subv_h((v8i16)v, v_offset);       \
++    UNPCK_SH_SW(y_coeff, y_coeff_r, y_coeff_l);         \
++    UNPCK_SH_SW(y1, tmp_r, tmp_l);                      \
++    MUH_H(tmp_r, y_coeff_r, tmp_l, y_coeff_l, y_1_r);   \
++    UNPCK_SH_SW(y2, tmp_r, tmp_l);                      \
++    MUH_H(tmp_r, y_coeff_r, tmp_l, y_coeff_l, y_2_r);   \
++    UNPCK_SH_SW(ug_coeff, ug_coeff_r, ug_coeff_l);      \
++    UNPCK_SH_SW(ub_coeff, ub_coeff_r, ub_coeff_l);      \
++    UNPCK_SH_SW(u, tmp_r, tmp_l);                       \
++    MUH_H(tmp_r, ug_coeff_r, tmp_l, ug_coeff_l, u2g_r); \
++    MUH_H(tmp_r, ub_coeff_r, tmp_l, ub_coeff_l, u2b_r); \
++    UNPCK_SH_SW(vr_coeff, vr_coeff_r, vr_coeff_l);      \
++    UNPCK_SH_SW(vg_coeff, vg_coeff_r, vg_coeff_l);      \
++    UNPCK_SH_SW(v, tmp_r, tmp_l);                       \
++    MUH_H(tmp_r, vr_coeff_r, tmp_l, vr_coeff_l, v2r_r); \
++    MUH_H(tmp_r, vg_coeff_r, tmp_l, vg_coeff_l, v2g_r); \
++    r1    = __msa_adds_s_h(y_1_r, v2r_r);               \
++    v2g_r = __msa_adds_s_h(v2g_r, u2g_r);               \
++    g1    = __msa_adds_s_h(y_1_r, v2g_r);               \
++    b1    = __msa_adds_s_h(y_1_r, u2b_r);               \
++    r2    = __msa_adds_s_h(y_2_r, v2r_r);               \
++    g2    = __msa_adds_s_h(y_2_r, v2g_r);               \
++    b2    = __msa_adds_s_h(y_2_r, u2b_r);               \
++    CLIP_SH4_0_255(r1, g1, b1, r2);                     \
++    CLIP_SH2_0_255(g2, b2);                             \
++}
++
++#define RGB_PACK(r, g, b, rgb_l, rgb_h)                        \
++{                                                              \
++    v16i8 rg;                                                  \
++    rg = __msa_ilvev_b((v16i8)g, (v16i8)r);                    \
++    rgb_l = (v8i16)__msa_vshf_b((v16i8)shuf2, (v16i8)b, rg);   \
++    rgb_h = (v8i16)__msa_vshf_b((v16i8)shuf3, (v16i8)b, rg);   \
++}
++
++#define RGB32_PACK(a, r, g, b, rgb_l, rgb_h)            \
++{                                                       \
++    v16i8 ra, bg;                                       \
++    ra    = __msa_ilvev_b((v16i8)r, (v16i8)a);          \
++    bg    = __msa_ilvev_b((v16i8)b, (v16i8)g);          \
++    rgb_l = __msa_ilvr_h((v8i16)bg, (v8i16)ra);         \
++    rgb_h = __msa_ilvl_h((v8i16)bg, (v8i16)ra);         \
++}
++
++#define RGB_STORE(rgb_l, rgb_h, image)                  \
++{                                                       \
++    ST_SH(rgb_l, image);                                \
++    SD_NEW(__msa_copy_u_d((v2i64)rgb_h, 0), image);     \
++}
++
++#define RGB32_STORE(rgb_l, rgb_h, image)                \
++{                                                       \
++    ST_SH2(rgb_l, rgb_h, image, 4);                     \
++}
++
++#define YUV2RGBFUNC(func_name, dst_type, alpha)                                     \
++           int func_name(SwsContext *c, const uint8_t *src[],                       \
++                         int srcStride[], int srcSliceY, int srcSliceH,             \
++                         uint8_t *dst[], int dstStride[])                           \
++{                                                                                   \
++    int x, y, h_size, vshift, res;                                                  \
++    v16i8 m_y1, m_y2, m_u, m_v;                                                     \
++    v16i8 m_u_l, m_v_l, m_y1_l, m_y2_l;                                             \
++    v4i32 y_coeff_r, y_coeff_l, ug_coeff_r, ug_coeff_l;                             \
++    v4i32 ub_coeff_r, ub_coeff_l, vr_coeff_r, vr_coeff_l;                           \
++    v4i32 vg_coeff_r, vg_coeff_l, tmp_r, tmp_l;                                     \
++    v8i16 y_1_r, y_2_r, u2g_r, v2g_r, u2b_r, v2r_r, rgb1_l, rgb1_h;                 \
++    v8i16 rgb2_l, rgb2_h, r1, g1, b1, r2, g2, b2;                                   \
++    v2i64 shuf2 = {0x0504120302100100, 0x0A18090816070614};                         \
++    v2i64 shuf3 = {0x1E0F0E1C0D0C1A0B, 0x0101010101010101};                         \
++    v16i8 zero = __msa_fill_b(0);                                                   \
++                                                                                    \
++    YUV2RGB_LOAD_COE                                                                \
++                                                                                    \
++    h_size = c->dstW >> 4;                                                          \
++    res = (c->dstW & 15) >> 1;                                                      \
++    vshift = c->srcFormat != AV_PIX_FMT_YUV422P;                                    \
++    for (y = 0; y < srcSliceH; y += 2) {                                            \
++        dst_type av_unused *r, *g, *b;                                              \
++        dst_type *image1    = (dst_type *)(dst[0] + (y + srcSliceY) * dstStride[0]);\
++        dst_type *image2    = (dst_type *)(image1 +                   dstStride[0]);\
++        const uint8_t *py_1 = src[0] +               y * srcStride[0];              \
++        const uint8_t *py_2 = py_1   +                   srcStride[0];              \
++        const uint8_t *pu   = src[1] +   (y >> vshift) * srcStride[1];              \
++        const uint8_t *pv   = src[2] +   (y >> vshift) * srcStride[2];              \
++        for(x = 0; x < h_size; x++) {                                               \
++
++#define YUV2RGBFUNC32(func_name, dst_type, alpha)                               \
++           int func_name(SwsContext *c, const uint8_t *src[],                   \
++                         int srcStride[], int srcSliceY, int srcSliceH,         \
++                         uint8_t *dst[], int dstStride[])                       \
++{                                                                               \
++    int x, y, h_size, vshift, res;                                              \
++    v16i8 m_y1, m_y2, m_u, m_v;                                                 \
++    v16i8 m_u_l, m_v_l, m_y1_l, m_y2_l;                                         \
++    v4i32 y_coeff_r, y_coeff_l, ug_coeff_r, ug_coeff_l;                         \
++    v4i32 ub_coeff_r, ub_coeff_l, vr_coeff_r, vr_coeff_l;                       \
++    v4i32 vg_coeff_r, vg_coeff_l, tmp_r, tmp_l;                                 \
++    v8i16 y_1_r, y_2_r, u2g_r, v2g_r, u2b_r, v2r_r, rgb1_l, rgb1_h;             \
++    v8i16 rgb2_l, rgb2_h, r1, g1, b1, r2, g2, b2;                               \
++    v16u8 a = (v16u8)__msa_fill_b(0xFF);                                        \
++    v16i8 zero = __msa_fill_b(0);                                               \
++                                                                                \
++    YUV2RGB_LOAD_COE                                                            \
++                                                                                \
++    h_size = c->dstW >> 4;                                                      \
++    res = (c->dstW & 15) >> 1;                                                  \
++    vshift = c->srcFormat != AV_PIX_FMT_YUV422P;                                \
++    for (y = 0; y < srcSliceH; y += 2) {                                        \
++        int yd = y + srcSliceY;                                                 \
++        dst_type av_unused *r, *g, *b;                                          \
++        dst_type *image1    = (dst_type *)(dst[0] + (yd)     * dstStride[0]);   \
++        dst_type *image2    = (dst_type *)(dst[0] + (yd + 1) * dstStride[0]);   \
++        const uint8_t *py_1 = src[0] +               y * srcStride[0];          \
++        const uint8_t *py_2 = py_1   +                   srcStride[0];          \
++        const uint8_t *pu   = src[1] +   (y >> vshift) * srcStride[1];          \
++        const uint8_t *pv   = src[2] +   (y >> vshift) * srcStride[2];          \
++        for(x = 0; x < h_size; x++) {                                           \
++
++#define DEALYUV2RGBREMAIN                                                           \
++            py_1 += 16;                                                             \
++            py_2 += 16;                                                             \
++            pu += 8;                                                                \
++            pv += 8;                                                                \
++            image1 += 48;                                                           \
++            image2 += 48;                                                           \
++        }                                                                           \
++        for (x = 0; x < res; x++) {                                                 \
++            int av_unused U, V, Y;                                                  \
++            U = pu[0];                                                              \
++            V = pv[0];                                                              \
++            r = (void *)c->table_rV[V+YUVRGB_TABLE_HEADROOM];                       \
++            g = (void *)(c->table_gU[U+YUVRGB_TABLE_HEADROOM]                       \
++                       + c->table_gV[V+YUVRGB_TABLE_HEADROOM]);                     \
++            b = (void *)c->table_bU[U+YUVRGB_TABLE_HEADROOM];
++
++#define DEALYUV2RGBREMAIN32                                                     \
++            py_1 += 16;                                                         \
++            py_2 += 16;                                                         \
++            pu += 8;                                                            \
++            pv += 8;                                                            \
++            image1 += 16;                                                       \
++            image2 += 16;                                                       \
++        }                                                                       \
++        for (x = 0; x < res; x++) {                                             \
++            int av_unused U, V, Y;                                              \
++            U = pu[0];                                                          \
++            V = pv[0];                                                          \
++            r = (void *)c->table_rV[V+YUVRGB_TABLE_HEADROOM];                   \
++            g = (void *)(c->table_gU[U+YUVRGB_TABLE_HEADROOM]                   \
++                       + c->table_gV[V+YUVRGB_TABLE_HEADROOM]);                 \
++            b = (void *)c->table_bU[U+YUVRGB_TABLE_HEADROOM];                   \
++
++#define PUTRGB24(dst, src)                  \
++    Y      = src[0];                        \
++    dst[0] = r[Y];                          \
++    dst[1] = g[Y];                          \
++    dst[2] = b[Y];                          \
++    Y      = src[1];                        \
++    dst[3] = r[Y];                          \
++    dst[4] = g[Y];                          \
++    dst[5] = b[Y];
++
++#define PUTBGR24(dst, src)                  \
++    Y      = src[0];                        \
++    dst[0] = b[Y];                          \
++    dst[1] = g[Y];                          \
++    dst[2] = r[Y];                          \
++    Y      = src[1];                        \
++    dst[3] = b[Y];                          \
++    dst[4] = g[Y];                          \
++    dst[5] = r[Y];
++
++#define PUTRGB(dst, src)                    \
++    Y      = src[0];                        \
++    dst[0] = r[Y] + g[Y] + b[Y];            \
++    Y      = src[1];                        \
++    dst[1] = r[Y] + g[Y] + b[Y];            \
++
++#define ENDRES                              \
++    pu += 1;                                \
++    pv += 1;                                \
++    py_1 += 2;                              \
++    py_2 += 2;                              \
++    image1 += 6;                            \
++    image2 += 6;                            \
++
++#define ENDRES32                            \
++    pu += 1;                                \
++    pv += 1;                                \
++    py_1 += 2;                              \
++    py_2 += 2;                              \
++    image1 += 2;                            \
++    image2 += 2;                            \
++
++#define END_FUNC()                          \
++        }                                   \
++    }                                       \
++    return srcSliceH;                       \
++}
++
++YUV2RGBFUNC(yuv420_rgb24_msa, uint8_t, 0)
++    LOAD_YUV_16
++    YUV2RGB(m_y1, m_y2, m_u, m_v, r1, g1, b1, r2, g2, b2);
++    RGB_PACK(r1, g1, b1, rgb1_l, rgb1_h);
++    RGB_PACK(r2, g2, b2, rgb2_l, rgb2_h);
++    RGB_STORE(rgb1_l, rgb1_h, image1);
++    RGB_STORE(rgb2_l, rgb2_h, image2);
++    YUV2RGB(m_y1_l, m_y2_l, m_u_l, m_v_l, r1, g1, b1, r2, g2, b2);
++    RGB_PACK(r1, g1, b1, rgb1_l, rgb1_h);
++    RGB_PACK(r2, g2, b2, rgb2_l, rgb2_h);
++    RGB_STORE(rgb1_l, rgb1_h, image1 + 24);
++    RGB_STORE(rgb2_l, rgb2_h, image2 + 24);
++    DEALYUV2RGBREMAIN
++    PUTRGB24(image1, py_1);
++    PUTRGB24(image2, py_2);
++    ENDRES
++    END_FUNC()
++
++YUV2RGBFUNC(yuv420_bgr24_msa, uint8_t, 0)
++    LOAD_YUV_16
++    YUV2RGB(m_y1, m_y2, m_u, m_v, r1, g1, b1, r2, g2, b2);
++    RGB_PACK(b1, g1, r1, rgb1_l, rgb1_h);
++    RGB_PACK(b2, g2, r2, rgb2_l, rgb2_h);
++    RGB_STORE(rgb1_l, rgb1_h, image1);
++    RGB_STORE(rgb2_l, rgb2_h, image2);
++    YUV2RGB(m_y1_l, m_y2_l, m_u_l, m_v_l, r1, g1, b1, r2, g2, b2);
++    RGB_PACK(b1, g1, r1, rgb1_l, rgb1_h);
++    RGB_PACK(b2, g2, r2, rgb2_l, rgb2_h);
++    RGB_STORE(rgb1_l, rgb1_h, image1 + 24);
++    RGB_STORE(rgb2_l, rgb2_h, image2 + 24);
++    DEALYUV2RGBREMAIN
++    PUTBGR24(image1, py_1);
++    PUTBGR24(image2, py_2);
++    ENDRES
++    END_FUNC()
++
++YUV2RGBFUNC32(yuv420_rgba32_msa, uint32_t, 0)
++    LOAD_YUV_16
++    YUV2RGB(m_y1, m_y2, m_u, m_v, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(r1, g1, b1, a, rgb1_l, rgb1_h);
++    RGB32_PACK(r2, g2, b2, a, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1);
++    RGB32_STORE(rgb2_l, rgb2_h, image2);
++    YUV2RGB(m_y1_l, m_y2_l, m_u_l, m_v_l, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(r1, g1, b1, a, rgb1_l, rgb1_h);
++    RGB32_PACK(r2, g2, b2, a, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1 + 8);
++    RGB32_STORE(rgb2_l, rgb2_h, image2 + 8);
++    DEALYUV2RGBREMAIN32
++    PUTRGB(image1, py_1);
++    PUTRGB(image2, py_2);
++    ENDRES32
++    END_FUNC()
++
++YUV2RGBFUNC32(yuv420_bgra32_msa, uint32_t, 0)
++    LOAD_YUV_16
++    YUV2RGB(m_y1, m_y2, m_u, m_v, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(b1, g1, r1, a, rgb1_l, rgb1_h);
++    RGB32_PACK(b2, g2, r2, a, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1);
++    RGB32_STORE(rgb2_l, rgb2_h, image2);
++    YUV2RGB(m_y1_l, m_y2_l, m_u_l, m_v_l, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(b1, g1, r1, a, rgb1_l, rgb1_h);
++    RGB32_PACK(b2, g2, r2, a, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1 + 8);
++    RGB32_STORE(rgb2_l, rgb2_h, image2 + 8);
++    DEALYUV2RGBREMAIN32
++    PUTRGB(image1, py_1);
++    PUTRGB(image2, py_2);
++    ENDRES32
++    END_FUNC()
++
++YUV2RGBFUNC32(yuv420_argb32_msa, uint32_t, 0)
++    LOAD_YUV_16
++    YUV2RGB(m_y1, m_y2, m_u, m_v, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(a, r1, g1, b1, rgb1_l, rgb1_h);
++    RGB32_PACK(a, r2, g2, b2, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1);
++    RGB32_STORE(rgb2_l, rgb2_h, image2);
++    YUV2RGB(m_y1_l, m_y2_l, m_u_l, m_v_l, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(a, r1, g1, b1, rgb1_l, rgb1_h);
++    RGB32_PACK(a, r2, g2, b2, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1 + 8);
++    RGB32_STORE(rgb2_l, rgb2_h, image2 + 8);
++    DEALYUV2RGBREMAIN32
++    PUTRGB(image1, py_1);
++    PUTRGB(image2, py_2);
++    ENDRES32
++    END_FUNC()
++
++YUV2RGBFUNC32(yuv420_abgr32_msa, uint32_t, 0)
++    LOAD_YUV_16
++    YUV2RGB(m_y1, m_y2, m_u, m_v, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(a, b1, g1, r1, rgb1_l, rgb1_h);
++    RGB32_PACK(a, b2, g2, r2, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1);
++    RGB32_STORE(rgb2_l, rgb2_h, image2);
++    YUV2RGB(m_y1_l, m_y2_l, m_u_l, m_v_l, r1, g1, b1, r2, g2, b2);
++    RGB32_PACK(a, b1, g1, r1, rgb1_l, rgb1_h);
++    RGB32_PACK(a, b2, g2, r2, rgb2_l, rgb2_h);
++    RGB32_STORE(rgb1_l, rgb1_h, image1 + 8);
++    RGB32_STORE(rgb2_l, rgb2_h, image2 + 8);
++    DEALYUV2RGBREMAIN32
++    PUTRGB(image1, py_1);
++    PUTRGB(image2, py_2);
++    ENDRES32
++    END_FUNC()
+diff --git a/libswscale/swscale_internal.h b/libswscale/swscale_internal.h
+index 1d2932dc43..4d1aeb1cf2 100644
+--- a/libswscale/swscale_internal.h
++++ b/libswscale/swscale_internal.h
+@@ -643,6 +643,7 @@ av_cold void ff_sws_init_range_convert(SwsContext *c);
+ SwsFunc ff_yuv2rgb_init_x86(SwsContext *c);
+ SwsFunc ff_yuv2rgb_init_ppc(SwsContext *c);
+ SwsFunc ff_yuv2rgb_init_loongarch(SwsContext *c);
++SwsFunc ff_yuv2rgb_init_mips(SwsContext *c);
+ 
+ static av_always_inline int is16BPS(enum AVPixelFormat pix_fmt)
+ {
+diff --git a/libswscale/yuv2rgb.c b/libswscale/yuv2rgb.c
+index f7edfd3d0c..1b36dd319e 100644
+--- a/libswscale/yuv2rgb.c
++++ b/libswscale/yuv2rgb.c
+@@ -686,6 +686,8 @@ SwsFunc ff_yuv2rgb_get_func_ptr(SwsContext *c)
+         t = ff_yuv2rgb_init_x86(c);
+     if (ARCH_LOONGARCH)
+         t = ff_yuv2rgb_init_loongarch(c);
++    if (ARCH_MIPS)
++        t = ff_yuv2rgb_init_mips(c);
+ 
+     if (t)
+         return t;
+-- 
+2.20.1
+

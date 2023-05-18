@@ -1,0 +1,1386 @@
+From e33b99be75293b8d0fe2498a4ab21edf81824db6 Mon Sep 17 00:00:00 2001
+From: wanglu <wanglu@loongson.cn>
+Date: Fri, 7 Apr 2023 18:12:26 +0800
+Subject: [PATCH 10/10] swscale: [LA] Add following lsx optimizations
+
+1. yuv2rgb_1_template
+2. yuv2rgb_2_template
+3. yuv2rgb_full_X_template
+4. yuv2rgb_full_2_template
+5. yuv2rgb_full_1_template
+
+Change-Id: Iea98df889ea45bbf51c26215e64da5b2bdf9eb3a
+Signed-off-by: wanglu <wanglu@loongson.cn>
+---
+ libswscale/loongarch/output_lasx.c |    2 -
+ libswscale/loongarch/output_lsx.c  | 1272 +++++++++++++++++++++++++++-
+ 2 files changed, 1261 insertions(+), 13 deletions(-)
+
+diff --git a/libswscale/loongarch/output_lasx.c b/libswscale/loongarch/output_lasx.c
+index 28ab970b1a..cc1f25cdcb 100644
+--- a/libswscale/loongarch/output_lasx.c
++++ b/libswscale/loongarch/output_lasx.c
+@@ -1773,8 +1773,6 @@ YUV2RGBWRAPPER(yuv2, rgb_full, bgr4_byte_full,  AV_PIX_FMT_BGR4_BYTE, 0)
+ YUV2RGBWRAPPER(yuv2, rgb_full, rgb4_byte_full,  AV_PIX_FMT_RGB4_BYTE, 0)
+ YUV2RGBWRAPPER(yuv2, rgb_full, bgr8_full,   AV_PIX_FMT_BGR8,  0)
+ YUV2RGBWRAPPER(yuv2, rgb_full, rgb8_full,   AV_PIX_FMT_RGB8,  0)
+-#undef yuvTorgb
+-#undef yuvTorgb_setup
+ 
+ 
+ av_cold void ff_sws_init_output_loongarch(SwsContext *c)
+diff --git a/libswscale/loongarch/output_lsx.c b/libswscale/loongarch/output_lsx.c
+index 5da9325c97..768cc3abc6 100644
+--- a/libswscale/loongarch/output_lsx.c
++++ b/libswscale/loongarch/output_lsx.c
+@@ -475,6 +475,263 @@ yuv2rgb_X_template_lsx(SwsContext *c, const int16_t *lumFilter,
+     }
+ }
+ 
++static void
++yuv2rgb_2_template_lsx(SwsContext *c, const int16_t *buf[2],
++                       const int16_t *ubuf[2], const int16_t *vbuf[2],
++                       const int16_t *abuf[2], uint8_t *dest, int dstW,
++                       int yalpha, int uvalpha, int y,
++                       enum AVPixelFormat target, int hasAlpha)
++{
++    const int16_t *buf0  = buf[0],  *buf1  = buf[1],
++                  *ubuf0 = ubuf[0], *ubuf1 = ubuf[1],
++                  *vbuf0 = vbuf[0], *vbuf1 = vbuf[1];
++    int yalpha1   = 4096 - yalpha;
++    int uvalpha1  = 4096 - uvalpha;
++    int i, count  = 0;
++    int len       = dstW - 7;
++    int len_count = (dstW + 1) >> 1;
++    const void *r, *g, *b;
++    int head  = YUVRGB_TABLE_HEADROOM;
++    __m128i v_yalpha1  = __lsx_vreplgr2vr_w(yalpha1);
++    __m128i v_uvalpha1 = __lsx_vreplgr2vr_w(uvalpha1);
++    __m128i v_yalpha   = __lsx_vreplgr2vr_w(yalpha);
++    __m128i v_uvalpha  = __lsx_vreplgr2vr_w(uvalpha);
++    __m128i headroom   = __lsx_vreplgr2vr_w(head);
++    __m128i zero       = __lsx_vldi(0);
++
++    for (i = 0; i < len; i += 8) {
++        int Y1, Y2, U, V;
++        int i_dex = i << 1;
++        int c_dex = count << 1;
++        __m128i y0_h, y0_l, y0, u0, v0;
++        __m128i y1_h, y1_l, y1, u1, v1;
++        __m128i y_l, y_h, u, v;
++
++        DUP4_ARG2(__lsx_vldx, buf0, i_dex, ubuf0, c_dex, vbuf0, c_dex,
++                  buf1, i_dex, y0, u0, v0, y1);
++        DUP2_ARG2(__lsx_vldx, ubuf1, c_dex, vbuf1, c_dex, u1, v1);
++        DUP2_ARG2(__lsx_vsllwil_w_h, y0, 0, y1, 0, y0_l, y1_l);
++        DUP2_ARG1(__lsx_vexth_w_h, y0, y1, y0_h, y1_h);
++        DUP4_ARG2(__lsx_vilvl_h, zero, u0, zero, u1, zero, v0, zero, v1,
++                  u0, u1, v0, v1);
++        y0_l = __lsx_vmul_w(y0_l, v_yalpha1);
++        y0_h = __lsx_vmul_w(y0_h, v_yalpha1);
++        u0   = __lsx_vmul_w(u0, v_uvalpha1);
++        v0   = __lsx_vmul_w(v0, v_uvalpha1);
++        y_l  = __lsx_vmadd_w(y0_l, v_yalpha, y1_l);
++        y_h  = __lsx_vmadd_w(y0_h, v_yalpha, y1_h);
++        u    = __lsx_vmadd_w(u0, v_uvalpha, u1);
++        v    = __lsx_vmadd_w(v0, v_uvalpha, v1);
++        y_l  = __lsx_vsrai_w(y_l, 19);
++        y_h  = __lsx_vsrai_w(y_h, 19);
++        u    = __lsx_vsrai_w(u, 19);
++        v    = __lsx_vsrai_w(v, 19);
++        u    = __lsx_vadd_w(u, headroom);
++        v    = __lsx_vadd_w(v, headroom);
++        WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 0, 1, 0, 0);
++        WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 2, 3, 1, 1);
++        WRITE_YUV2RGB_LSX(y_h, y_h, u, v, 0, 1, 2, 2);
++        WRITE_YUV2RGB_LSX(y_h, y_h, u, v, 2, 3, 3, 3);
++    }
++    if (dstW - i >= 4) {
++        int Y1, Y2, U, V;
++        int i_dex = i << 1;
++        __m128i y0_l, y0, u0, v0;
++        __m128i y1_l, y1, u1, v1;
++        __m128i y_l, u, v;
++
++        y0   = __lsx_vldx(buf0, i_dex);
++        u0   = __lsx_vldrepl_d((ubuf0 + count), 0);
++        v0   = __lsx_vldrepl_d((vbuf0 + count), 0);
++        y1   = __lsx_vldx(buf1, i_dex);
++        u1   = __lsx_vldrepl_d((ubuf1 + count), 0);
++        v1   = __lsx_vldrepl_d((vbuf1 + count), 0);
++        DUP2_ARG2(__lsx_vilvl_h, zero, y0, zero, y1, y0_l, y1_l);
++        DUP4_ARG2(__lsx_vilvl_h, zero, u0, zero, u1, zero, v0, zero, v1,
++                  u0, u1, v0, v1);
++        y0_l = __lsx_vmul_w(y0_l, v_yalpha1);
++        u0   = __lsx_vmul_w(u0, v_uvalpha1);
++        v0   = __lsx_vmul_w(v0, v_uvalpha1);
++        y_l  = __lsx_vmadd_w(y0_l, v_yalpha, y1_l);
++        u    = __lsx_vmadd_w(u0, v_uvalpha, u1);
++        v    = __lsx_vmadd_w(v0, v_uvalpha, v1);
++        y_l  = __lsx_vsrai_w(y_l, 19);
++        u    = __lsx_vsrai_w(u, 19);
++        v    = __lsx_vsrai_w(v, 19);
++        u    = __lsx_vadd_w(u, headroom);
++        v    = __lsx_vadd_w(v, headroom);
++        WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 0, 1, 0, 0);
++        WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 2, 3, 1, 1);
++        i += 4;
++    }
++    for (; count < len_count; count++) {
++        int Y1 = (buf0[count * 2]     * yalpha1  +
++                  buf1[count * 2]     * yalpha)  >> 19;
++        int Y2 = (buf0[count * 2 + 1] * yalpha1  +
++                  buf1[count * 2 + 1] * yalpha) >> 19;
++        int U  = (ubuf0[count] * uvalpha1 + ubuf1[count] * uvalpha) >> 19;
++        int V  = (vbuf0[count] * uvalpha1 + vbuf1[count] * uvalpha) >> 19;
++
++        r =  c->table_rV[V + YUVRGB_TABLE_HEADROOM],
++        g = (c->table_gU[U + YUVRGB_TABLE_HEADROOM] +
++             c->table_gV[V + YUVRGB_TABLE_HEADROOM]),
++        b =  c->table_bU[U + YUVRGB_TABLE_HEADROOM];
++
++        yuv2rgb_write(dest, count, Y1, Y2, 0, 0,
++                      r, g, b, y, target, 0);
++    }
++}
++
++static void
++yuv2rgb_1_template_lsx(SwsContext *c, const int16_t *buf0,
++                       const int16_t *ubuf[2], const int16_t *vbuf[2],
++                       const int16_t *abuf0, uint8_t *dest, int dstW,
++                       int uvalpha, int y, enum AVPixelFormat target,
++                       int hasAlpha)
++{
++    const int16_t *ubuf0 = ubuf[0], *vbuf0 = vbuf[0];
++    int i;
++    int len       = (dstW - 7);
++    int len_count = (dstW + 1) >> 1;
++    const void *r, *g, *b;
++
++    if (uvalpha < 2048) {
++        int count    = 0;
++        int head = YUVRGB_TABLE_HEADROOM;
++        __m128i headroom  = __lsx_vreplgr2vr_h(head);
++
++        for (i = 0; i < len; i += 8) {
++            int Y1, Y2, U, V;
++            int i_dex = i << 1;
++            int c_dex = count << 1;
++            __m128i src_y, src_u, src_v;
++            __m128i u, v, uv, y_l, y_h;
++
++            src_y = __lsx_vldx(buf0, i_dex);
++            DUP2_ARG2(__lsx_vldx, ubuf0, c_dex, vbuf0, c_dex, src_u, src_v);
++            src_y = __lsx_vsrari_h(src_y, 7);
++            src_u = __lsx_vsrari_h(src_u, 7);
++            src_v = __lsx_vsrari_h(src_v, 7);
++            y_l   = __lsx_vsllwil_w_h(src_y, 0);
++            y_h   = __lsx_vexth_w_h(src_y);
++            uv    = __lsx_vilvl_h(src_v, src_u);
++            u     = __lsx_vaddwev_w_h(uv, headroom);
++            v     = __lsx_vaddwod_w_h(uv, headroom);
++            WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 0, 1, 0, 0);
++            WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 2, 3, 1, 1);
++            WRITE_YUV2RGB_LSX(y_h, y_h, u, v, 0, 1, 2, 2);
++            WRITE_YUV2RGB_LSX(y_h, y_h, u, v, 2, 3, 3, 3);
++        }
++        if (dstW - i >= 4){
++            int Y1, Y2, U, V;
++            int i_dex = i << 1;
++            __m128i src_y, src_u, src_v;
++            __m128i y_l, u, v, uv;
++
++            src_y  = __lsx_vldx(buf0, i_dex);
++            src_u  = __lsx_vldrepl_d((ubuf0 + count), 0);
++            src_v  = __lsx_vldrepl_d((vbuf0 + count), 0);
++            y_l    = __lsx_vsrari_h(src_y, 7);
++            y_l    = __lsx_vsllwil_w_h(y_l, 0);
++            uv     = __lsx_vilvl_h(src_v, src_u);
++            uv     = __lsx_vsrari_h(uv, 7);
++            u      = __lsx_vaddwev_w_h(uv, headroom);
++            v      = __lsx_vaddwod_w_h(uv, headroom);
++            WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 0, 1, 0, 0);
++            WRITE_YUV2RGB_LSX(y_l, y_l, u, v, 2, 3, 1, 1);
++            i += 4;
++        }
++        for (; count < len_count; count++) {
++            int Y1 = (buf0[count * 2    ] + 64) >> 7;
++            int Y2 = (buf0[count * 2 + 1] + 64) >> 7;
++            int U  = (ubuf0[count]        + 64) >> 7;
++            int V  = (vbuf0[count]        + 64) >> 7;
++
++            r =  c->table_rV[V + YUVRGB_TABLE_HEADROOM],
++            g = (c->table_gU[U + YUVRGB_TABLE_HEADROOM] +
++                 c->table_gV[V + YUVRGB_TABLE_HEADROOM]),
++            b =  c->table_bU[U + YUVRGB_TABLE_HEADROOM];
++
++            yuv2rgb_write(dest, count, Y1, Y2, 0, 0,
++                          r, g, b, y, target, 0);
++        }
++    } else {
++        const int16_t *ubuf1 = ubuf[1], *vbuf1 = vbuf[1];
++        int count = 0;
++        int HEADROOM = YUVRGB_TABLE_HEADROOM;
++        __m128i headroom    = __lsx_vreplgr2vr_w(HEADROOM);
++
++        for (i = 0; i < len; i += 8) {
++            int Y1, Y2, U, V;
++            int i_dex = i << 1;
++            int c_dex = count << 1;
++            __m128i src_y, src_u0, src_v0, src_u1, src_v1;
++            __m128i y_l, y_h, u1, u2, v1, v2;
++
++            DUP4_ARG2(__lsx_vldx, buf0, i_dex, ubuf0, c_dex, vbuf0, c_dex,
++                      ubuf1, c_dex, src_y, src_u0, src_v0, src_u1);
++            src_v1 = __lsx_vldx(vbuf1, c_dex);
++            src_y  = __lsx_vsrari_h(src_y, 7);
++            u1      = __lsx_vaddwev_w_h(src_u0, src_u1);
++            v1      = __lsx_vaddwod_w_h(src_u0, src_u1);
++            u2      = __lsx_vaddwev_w_h(src_v0, src_v1);
++            v2      = __lsx_vaddwod_w_h(src_v0, src_v1);
++            y_l     = __lsx_vsllwil_w_h(src_y, 0);
++            y_h     = __lsx_vexth_w_h(src_y);
++            u1      = __lsx_vsrari_w(u1, 8);
++            v1      = __lsx_vsrari_w(v1, 8);
++            u2      = __lsx_vsrari_w(u2, 8);
++            v2      = __lsx_vsrari_w(v2, 8);
++            u1      = __lsx_vadd_w(u1, headroom);
++            v1      = __lsx_vadd_w(v1, headroom);
++            u2      = __lsx_vadd_w(u2, headroom);
++            v2      = __lsx_vadd_w(v2, headroom);
++            WRITE_YUV2RGB_LSX(y_l, y_l, u1, v1, 0, 1, 0, 0);
++            WRITE_YUV2RGB_LSX(y_l, y_l, u2, v2, 2, 3, 0, 0);
++            WRITE_YUV2RGB_LSX(y_h, y_h, u1, v1, 0, 1, 1, 1);
++            WRITE_YUV2RGB_LSX(y_h, y_h, u2, v2, 2, 3, 1, 1);
++        }
++        if (dstW - i >= 4) {
++            int Y1, Y2, U, V;
++            int i_dex = i << 1;
++            __m128i src_y, src_u0, src_v0, src_u1, src_v1;
++            __m128i uv;
++
++            src_y  = __lsx_vldx(buf0, i_dex);
++            src_u0 = __lsx_vldrepl_d((ubuf0 + count), 0);
++            src_v0 = __lsx_vldrepl_d((vbuf0 + count), 0);
++            src_u1 = __lsx_vldrepl_d((ubuf1 + count), 0);
++            src_v1 = __lsx_vldrepl_d((vbuf1 + count), 0);
++
++            src_u0 = __lsx_vilvl_h(src_u1, src_u0);
++            src_v0 = __lsx_vilvl_h(src_v1, src_v0);
++            src_y  = __lsx_vsrari_h(src_y, 7);
++            src_y  = __lsx_vsllwil_w_h(src_y, 0);
++            uv     = __lsx_vilvl_h(src_v0, src_u0);
++            uv     = __lsx_vhaddw_w_h(uv, uv);
++            uv     = __lsx_vsrari_w(uv, 8);
++            uv     = __lsx_vadd_w(uv, headroom);
++            WRITE_YUV2RGB_LSX(src_y, src_y, uv, uv, 0, 1, 0, 1);
++            WRITE_YUV2RGB_LSX(src_y, src_y, uv, uv, 2, 3, 2, 3);
++            i += 4;
++        }
++        for (; count < len_count; count++) {
++            int Y1 = (buf0[count * 2    ]         +  64) >> 7;
++            int Y2 = (buf0[count * 2 + 1]         +  64) >> 7;
++            int U  = (ubuf0[count] + ubuf1[count] + 128) >> 8;
++            int V  = (vbuf0[count] + vbuf1[count] + 128) >> 8;
++
++            r =  c->table_rV[V + YUVRGB_TABLE_HEADROOM],
++            g = (c->table_gU[U + YUVRGB_TABLE_HEADROOM] +
++                 c->table_gV[V + YUVRGB_TABLE_HEADROOM]),
++            b =  c->table_bU[U + YUVRGB_TABLE_HEADROOM];
++
++            yuv2rgb_write(dest, count, Y1, Y2, 0, 0,
++                          r, g, b, y, target, 0);
++        }
++    }
++}
++
+ #define YUV2RGBWRAPPERX(name, base, ext, fmt, hasAlpha)                               \
+ static void name ## ext ## _X_lsx(SwsContext *c, const int16_t *lumFilter,            \
+                                   const int16_t **lumSrc, int lumFilterSize,          \
+@@ -488,27 +745,1000 @@ static void name ## ext ## _X_lsx(SwsContext *c, const int16_t *lumFilter,
+                                     alpSrc, dest, dstW, y, fmt, hasAlpha);            \
+ }
+ 
++#define YUV2RGBWRAPPERX2(name, base, ext, fmt, hasAlpha)                              \
++YUV2RGBWRAPPERX(name, base, ext, fmt, hasAlpha)                                       \
++static void name ## ext ## _2_lsx(SwsContext *c, const int16_t *buf[2],               \
++                                  const int16_t *ubuf[2], const int16_t *vbuf[2],     \
++                                  const int16_t *abuf[2], uint8_t *dest, int dstW,    \
++                                  int yalpha, int uvalpha, int y)                     \
++{                                                                                     \
++    name ## base ## _2_template_lsx(c, buf, ubuf, vbuf, abuf, dest,                   \
++                                    dstW, yalpha, uvalpha, y, fmt, hasAlpha);         \
++}
++
++#define YUV2RGBWRAPPER(name, base, ext, fmt, hasAlpha)                                \
++YUV2RGBWRAPPERX2(name, base, ext, fmt, hasAlpha)                                      \
++static void name ## ext ## _1_lsx(SwsContext *c, const int16_t *buf0,                 \
++                                  const int16_t *ubuf[2], const int16_t *vbuf[2],     \
++                                  const int16_t *abuf0, uint8_t *dest, int dstW,      \
++                                  int uvalpha, int y)                                 \
++{                                                                                     \
++    name ## base ## _1_template_lsx(c, buf0, ubuf, vbuf, abuf0, dest,                 \
++                                    dstW, uvalpha, y, fmt, hasAlpha);                 \
++}
+ 
+ #if CONFIG_SMALL
+ #else
+ #if CONFIG_SWSCALE_ALPHA
+ #endif
+-YUV2RGBWRAPPERX(yuv2rgb,, x32_1,  AV_PIX_FMT_RGB32_1, 0)
+-YUV2RGBWRAPPERX(yuv2rgb,, x32,    AV_PIX_FMT_RGB32,   0)
++YUV2RGBWRAPPER(yuv2rgb,, x32_1,  AV_PIX_FMT_RGB32_1, 0)
++YUV2RGBWRAPPER(yuv2rgb,, x32,    AV_PIX_FMT_RGB32,   0)
+ #endif
+-YUV2RGBWRAPPERX(yuv2, rgb, rgb24, AV_PIX_FMT_RGB24,     0)
+-YUV2RGBWRAPPERX(yuv2, rgb, bgr24, AV_PIX_FMT_BGR24,     0)
+-YUV2RGBWRAPPERX(yuv2rgb,,  16,    AV_PIX_FMT_RGB565,    0)
+-YUV2RGBWRAPPERX(yuv2rgb,,  15,    AV_PIX_FMT_RGB555,    0)
+-YUV2RGBWRAPPERX(yuv2rgb,,  12,    AV_PIX_FMT_RGB444,    0)
+-YUV2RGBWRAPPERX(yuv2rgb,,   8,    AV_PIX_FMT_RGB8,      0)
+-YUV2RGBWRAPPERX(yuv2rgb,,   4,    AV_PIX_FMT_RGB4,      0)
+-YUV2RGBWRAPPERX(yuv2rgb,,   4b,   AV_PIX_FMT_RGB4_BYTE, 0)
++YUV2RGBWRAPPER(yuv2, rgb, rgb24, AV_PIX_FMT_RGB24,     0)
++YUV2RGBWRAPPER(yuv2, rgb, bgr24, AV_PIX_FMT_BGR24,     0)
++YUV2RGBWRAPPER(yuv2rgb,,  16,    AV_PIX_FMT_RGB565,    0)
++YUV2RGBWRAPPER(yuv2rgb,,  15,    AV_PIX_FMT_RGB555,    0)
++YUV2RGBWRAPPER(yuv2rgb,,  12,    AV_PIX_FMT_RGB444,    0)
++YUV2RGBWRAPPER(yuv2rgb,,  8,     AV_PIX_FMT_RGB8,      0)
++YUV2RGBWRAPPER(yuv2rgb,,  4,     AV_PIX_FMT_RGB4,      0)
++YUV2RGBWRAPPER(yuv2rgb,,  4b,    AV_PIX_FMT_RGB4_BYTE, 0)
+ 
+-av_cold void ff_sws_init_output_lsx(SwsContext *c)
++// This function is copied from libswscale/output.c
++static av_always_inline void yuv2rgb_write_full(SwsContext *c,
++    uint8_t *dest, int i, int R, int A, int G, int B,
++    int y, enum AVPixelFormat target, int hasAlpha, int err[4])
++{
++    int isrgb8 = target == AV_PIX_FMT_BGR8 || target == AV_PIX_FMT_RGB8;
++
++    if ((R | G | B) & 0xC0000000) {
++        R = av_clip_uintp2(R, 30);
++        G = av_clip_uintp2(G, 30);
++        B = av_clip_uintp2(B, 30);
++    }
++
++    switch(target) {
++    case AV_PIX_FMT_ARGB:
++        dest[0] = hasAlpha ? A : 255;
++        dest[1] = R >> 22;
++        dest[2] = G >> 22;
++        dest[3] = B >> 22;
++        break;
++    case AV_PIX_FMT_RGB24:
++        dest[0] = R >> 22;
++        dest[1] = G >> 22;
++        dest[2] = B >> 22;
++        break;
++    case AV_PIX_FMT_RGBA:
++        dest[0] = R >> 22;
++        dest[1] = G >> 22;
++        dest[2] = B >> 22;
++        dest[3] = hasAlpha ? A : 255;
++        break;
++    case AV_PIX_FMT_ABGR:
++        dest[0] = hasAlpha ? A : 255;
++        dest[1] = B >> 22;
++        dest[2] = G >> 22;
++        dest[3] = R >> 22;
++        break;
++    case AV_PIX_FMT_BGR24:
++        dest[0] = B >> 22;
++        dest[1] = G >> 22;
++        dest[2] = R >> 22;
++        break;
++    case AV_PIX_FMT_BGRA:
++        dest[0] = B >> 22;
++        dest[1] = G >> 22;
++        dest[2] = R >> 22;
++        dest[3] = hasAlpha ? A : 255;
++        break;
++    case AV_PIX_FMT_BGR4_BYTE:
++    case AV_PIX_FMT_RGB4_BYTE:
++    case AV_PIX_FMT_BGR8:
++    case AV_PIX_FMT_RGB8:
++    {
++        int r,g,b;
++
++        switch (c->dither) {
++        default:
++        case SWS_DITHER_AUTO:
++        case SWS_DITHER_ED:
++            R >>= 22;
++            G >>= 22;
++            B >>= 22;
++            R += (7*err[0] + 1*c->dither_error[0][i] + 5*c->dither_error[0][i+1] + 3*c->dither_error[0][i+2])>>4;
++            G += (7*err[1] + 1*c->dither_error[1][i] + 5*c->dither_error[1][i+1] + 3*c->dither_error[1][i+2])>>4;
++            B += (7*err[2] + 1*c->dither_error[2][i] + 5*c->dither_error[2][i+1] + 3*c->dither_error[2][i+2])>>4;
++            c->dither_error[0][i] = err[0];
++            c->dither_error[1][i] = err[1];
++            c->dither_error[2][i] = err[2];
++            r = R >> (isrgb8 ? 5 : 7);
++            g = G >> (isrgb8 ? 5 : 6);
++            b = B >> (isrgb8 ? 6 : 7);
++            r = av_clip(r, 0, isrgb8 ? 7 : 1);
++            g = av_clip(g, 0, isrgb8 ? 7 : 3);
++            b = av_clip(b, 0, isrgb8 ? 3 : 1);
++            err[0] = R - r*(isrgb8 ? 36 : 255);
++            err[1] = G - g*(isrgb8 ? 36 : 85);
++            err[2] = B - b*(isrgb8 ? 85 : 255);
++            break;
++        case SWS_DITHER_A_DITHER:
++            if (isrgb8) {
++  /* see http://pippin.gimp.org/a_dither/ for details/origin */
++#define A_DITHER(u,v)   (((((u)+((v)*236))*119)&0xff))
++                r = (((R >> 19) + A_DITHER(i,y)  -96)>>8);
++                g = (((G >> 19) + A_DITHER(i + 17,y) - 96)>>8);
++                b = (((B >> 20) + A_DITHER(i + 17*2,y) -96)>>8);
++                r = av_clip_uintp2(r, 3);
++                g = av_clip_uintp2(g, 3);
++                b = av_clip_uintp2(b, 2);
++            } else {
++                r = (((R >> 21) + A_DITHER(i,y)-256)>>8);
++                g = (((G >> 19) + A_DITHER(i + 17,y)-256)>>8);
++                b = (((B >> 21) + A_DITHER(i + 17*2,y)-256)>>8);
++                r = av_clip_uintp2(r, 1);
++                g = av_clip_uintp2(g, 2);
++                b = av_clip_uintp2(b, 1);
++            }
++            break;
++        case SWS_DITHER_X_DITHER:
++            if (isrgb8) {
++  /* see http://pippin.gimp.org/a_dither/ for details/origin */
++#define X_DITHER(u,v)   (((((u)^((v)*237))*181)&0x1ff)/2)
++                r = (((R >> 19) + X_DITHER(i,y) - 96)>>8);
++                g = (((G >> 19) + X_DITHER(i + 17,y) - 96)>>8);
++                b = (((B >> 20) + X_DITHER(i + 17*2,y) - 96)>>8);
++                r = av_clip_uintp2(r, 3);
++                g = av_clip_uintp2(g, 3);
++                b = av_clip_uintp2(b, 2);
++            } else {
++                r = (((R >> 21) + X_DITHER(i,y)-256)>>8);
++                g = (((G >> 19) + X_DITHER(i + 17,y)-256)>>8);
++                b = (((B >> 21) + X_DITHER(i + 17*2,y)-256)>>8);
++                r = av_clip_uintp2(r, 1);
++                g = av_clip_uintp2(g, 2);
++                b = av_clip_uintp2(b, 1);
++            }
++
++            break;
++        }
++
++        if(target == AV_PIX_FMT_BGR4_BYTE) {
++            dest[0] = r + 2*g + 8*b;
++        } else if(target == AV_PIX_FMT_RGB4_BYTE) {
++            dest[0] = b + 2*g + 8*r;
++        } else if(target == AV_PIX_FMT_BGR8) {
++            dest[0] = r + 8*g + 64*b;
++        } else if(target == AV_PIX_FMT_RGB8) {
++            dest[0] = b + 4*g + 32*r;
++        } else
++            av_assert2(0);
++        break; }
++    }
++}
++
++#define YUVTORGB_SETUP_LSX                                   \
++    int y_offset   = c->yuv2rgb_y_offset;                    \
++    int y_coeff    = c->yuv2rgb_y_coeff;                     \
++    int v2r_coe    = c->yuv2rgb_v2r_coeff;                   \
++    int v2g_coe    = c->yuv2rgb_v2g_coeff;                   \
++    int u2g_coe    = c->yuv2rgb_u2g_coeff;                   \
++    int u2b_coe    = c->yuv2rgb_u2b_coeff;                   \
++    __m128i offset = __lsx_vreplgr2vr_w(y_offset);           \
++    __m128i coeff  = __lsx_vreplgr2vr_w(y_coeff);            \
++    __m128i v2r    = __lsx_vreplgr2vr_w(v2r_coe);            \
++    __m128i v2g    = __lsx_vreplgr2vr_w(v2g_coe);            \
++    __m128i u2g    = __lsx_vreplgr2vr_w(u2g_coe);            \
++    __m128i u2b    = __lsx_vreplgr2vr_w(u2b_coe);            \
++
++#define YUVTORGB_LSX(y, u, v, R, G, B, offset, coeff,        \
++                     y_temp, v2r, v2g, u2g, u2b)             \
++{                                                            \
++     y = __lsx_vsub_w(y, offset);                            \
++     y = __lsx_vmul_w(y, coeff);                             \
++     y = __lsx_vadd_w(y, y_temp);                            \
++     R = __lsx_vmadd_w(y, v, v2r);                           \
++     v = __lsx_vmadd_w(y, v, v2g);                           \
++     G = __lsx_vmadd_w(v, u, u2g);                           \
++     B = __lsx_vmadd_w(y, u, u2b);                           \
++}
++
++#define WRITE_FULL_A_LSX(r, g, b, a, t1, s)                                  \
++{                                                                            \
++    R = __lsx_vpickve2gr_w(r, t1);                                           \
++    G = __lsx_vpickve2gr_w(g, t1);                                           \
++    B = __lsx_vpickve2gr_w(b, t1);                                           \
++    A = __lsx_vpickve2gr_w(a, t1);                                           \
++    if (A & 0x100)                                                           \
++        A = av_clip_uint8(A);                                                \
++    yuv2rgb_write_full(c, dest, i + s, R, A, G, B, y, target, hasAlpha, err);\
++    dest += step;                                                            \
++}
++
++#define WRITE_FULL_LSX(r, g, b, t1, s)                                        \
++{                                                                             \
++    R = __lsx_vpickve2gr_w(r, t1);                                            \
++    G = __lsx_vpickve2gr_w(g, t1);                                            \
++    B = __lsx_vpickve2gr_w(b, t1);                                            \
++    yuv2rgb_write_full(c, dest, i + s, R, 0, G, B, y, target, hasAlpha, err); \
++    dest += step;                                                             \
++}
++
++static void
++yuv2rgb_full_X_template_lsx(SwsContext *c, const int16_t *lumFilter,
++                            const int16_t **lumSrc, int lumFilterSize,
++                            const int16_t *chrFilter, const int16_t **chrUSrc,
++                            const int16_t **chrVSrc, int chrFilterSize,
++                            const int16_t **alpSrc, uint8_t *dest,
++                            int dstW, int y, enum AVPixelFormat target,
++                            int hasAlpha)
++{
++    int i, j, B, G, R, A;
++    int step       = (target == AV_PIX_FMT_RGB24 ||
++                      target == AV_PIX_FMT_BGR24) ? 3 : 4;
++    int err[4]     = {0};
++    int a_temp     = 1 << 18;
++    int templ      = 1 << 9;
++    int tempc      = templ - (128 << 19);
++    int ytemp      = 1 << 21;
++    int len        = dstW - 7;
++    __m128i y_temp = __lsx_vreplgr2vr_w(ytemp);
++    YUVTORGB_SETUP_LSX
++
++    if(   target == AV_PIX_FMT_BGR4_BYTE || target == AV_PIX_FMT_RGB4_BYTE
++       || target == AV_PIX_FMT_BGR8      || target == AV_PIX_FMT_RGB8)
++        step = 1;
++
++    for (i = 0; i < len; i += 8) {
++        __m128i l_src, u_src, v_src;
++        __m128i y_ev, y_od, u_ev, u_od, v_ev, v_od, temp;
++        __m128i R_ev, R_od, G_ev, G_od, B_ev, B_od;
++        int n = i << 1;
++
++        y_ev = y_od = __lsx_vreplgr2vr_w(templ);
++        u_ev = u_od = v_ev = v_od = __lsx_vreplgr2vr_w(tempc);
++        for (j = 0; j < lumFilterSize; j++) {
++            temp  = __lsx_vldrepl_h((lumFilter + j), 0);
++            l_src = __lsx_vldx(lumSrc[j], n);
++            y_ev  = __lsx_vmaddwev_w_h(y_ev, l_src, temp);
++            y_od  = __lsx_vmaddwod_w_h(y_od, l_src, temp);
++        }
++        for (j = 0; j < chrFilterSize; j++) {
++            temp  = __lsx_vldrepl_h((chrFilter + j), 0);
++            DUP2_ARG2(__lsx_vldx, chrUSrc[j], n, chrVSrc[j], n,
++                      u_src, v_src);
++            DUP2_ARG3(__lsx_vmaddwev_w_h, u_ev, u_src, temp, v_ev,
++                      v_src, temp, u_ev, v_ev);
++            DUP2_ARG3(__lsx_vmaddwod_w_h, u_od, u_src, temp, v_od,
++                      v_src, temp, u_od, v_od);
++        }
++        y_ev = __lsx_vsrai_w(y_ev, 10);
++        y_od = __lsx_vsrai_w(y_od, 10);
++        u_ev = __lsx_vsrai_w(u_ev, 10);
++        u_od = __lsx_vsrai_w(u_od, 10);
++        v_ev = __lsx_vsrai_w(v_ev, 10);
++        v_od = __lsx_vsrai_w(v_od, 10);
++        YUVTORGB_LSX(y_ev, u_ev, v_ev, R_ev, G_ev, B_ev, offset, coeff,
++                     y_temp, v2r, v2g, u2g, u2b);
++        YUVTORGB_LSX(y_od, u_od, v_od, R_od, G_od, B_od, offset, coeff,
++                     y_temp, v2r, v2g, u2g, u2b);
++
++        if (hasAlpha) {
++            __m128i a_src, a_ev, a_od;
++
++            a_ev = a_od = __lsx_vreplgr2vr_w(a_temp);
++            for (j = 0; j < lumFilterSize; j++) {
++                temp  = __lsx_vldrepl_h(lumFilter + j, 0);
++                a_src = __lsx_vldx(alpSrc[j], n);
++                a_ev  = __lsx_vmaddwev_w_h(a_ev, a_src, temp);
++                a_od  = __lsx_vmaddwod_w_h(a_od, a_src, temp);
++            }
++            a_ev = __lsx_vsrai_w(a_ev, 19);
++            a_od = __lsx_vsrai_w(a_od, 19);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 0, 0);
++            WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 0, 1);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 1, 2);
++            WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 1, 3);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 2, 4);
++            WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 2, 5);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 3, 6);
++            WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 3, 7);
++        } else {
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 0, 0);
++            WRITE_FULL_LSX(R_od, G_od, B_od, 0, 1);
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 1, 2);
++            WRITE_FULL_LSX(R_od, G_od, B_od, 1, 3);
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 2, 4);
++            WRITE_FULL_LSX(R_od, G_od, B_od, 2, 5);
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 3, 6);
++            WRITE_FULL_LSX(R_od, G_od, B_od, 3, 7);
++        }
++    }
++    if (dstW - i >= 4) {
++        __m128i l_src, u_src, v_src;
++        __m128i y_ev, u_ev, v_ev, uv, temp;
++        __m128i R_ev, G_ev, B_ev;
++        int n = i << 1;
++
++        y_ev = __lsx_vreplgr2vr_w(templ);
++        u_ev = v_ev = __lsx_vreplgr2vr_w(tempc);
++        for (j = 0; j < lumFilterSize; j++) {
++            temp  = __lsx_vldrepl_h((lumFilter + j), 0);
++            l_src = __lsx_vldx(lumSrc[j], n);
++            l_src = __lsx_vilvl_h(l_src, l_src);
++            y_ev  = __lsx_vmaddwev_w_h(y_ev, l_src, temp);
++        }
++        for (j = 0; j < chrFilterSize; j++) {
++            temp  = __lsx_vldrepl_h((chrFilter + j), 0);
++            DUP2_ARG2(__lsx_vldx, chrUSrc[j], n, chrVSrc[j], n, u_src, v_src);
++            uv    = __lsx_vilvl_h(v_src, u_src);
++            u_ev  = __lsx_vmaddwev_w_h(u_ev, uv, temp);
++            v_ev  = __lsx_vmaddwod_w_h(v_ev, uv, temp);
++        }
++        y_ev = __lsx_vsrai_w(y_ev, 10);
++        u_ev = __lsx_vsrai_w(u_ev, 10);
++        v_ev = __lsx_vsrai_w(v_ev, 10);
++        YUVTORGB_LSX(y_ev, u_ev, v_ev, R_ev, G_ev, B_ev, offset, coeff,
++                     y_temp, v2r, v2g, u2g, u2b);
++
++        if (hasAlpha) {
++            __m128i a_src, a_ev;
++
++            a_ev = __lsx_vreplgr2vr_w(a_temp);
++            for (j = 0; j < lumFilterSize; j++) {
++                temp  = __lsx_vldrepl_h(lumFilter + j, 0);
++                a_src = __lsx_vldx(alpSrc[j], n);
++                a_src = __lsx_vilvl_h(a_src, a_src);
++                a_ev  =  __lsx_vmaddwev_w_h(a_ev, a_src, temp);
++            }
++            a_ev = __lsx_vsrai_w(a_ev, 19);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 0, 0);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 1, 1);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 2, 2);
++            WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 3, 3);
++        } else {
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 0, 0);
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 1, 1);
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 2, 2);
++            WRITE_FULL_LSX(R_ev, G_ev, B_ev, 3, 3);
++        }
++        i += 4;
++    }
++    for (; i < dstW; i++) {
++        int Y = templ;
++        int V, U = V = tempc;
++
++        A = 0;
++        for (j = 0; j < lumFilterSize; j++) {
++            Y += lumSrc[j][i] * lumFilter[j];
++        }
++        for (j = 0; j < chrFilterSize; j++) {
++            U += chrUSrc[j][i] * chrFilter[j];
++            V += chrVSrc[j][i] * chrFilter[j];
++
++        }
++        Y >>= 10;
++        U >>= 10;
++        V >>= 10;
++        if (hasAlpha) {
++            A = 1 << 18;
++            for (j = 0; j < lumFilterSize; j++) {
++                A += alpSrc[j][i] * lumFilter[j];
++            }
++            A >>= 19;
++            if (A & 0x100)
++                A = av_clip_uint8(A);
++        }
++        Y -= y_offset;
++        Y *= y_coeff;
++        Y += ytemp;
++        R  = (unsigned)Y + V * v2r_coe;
++        G  = (unsigned)Y + V * v2g_coe + U * u2g_coe;
++        B  = (unsigned)Y + U * u2b_coe;
++        yuv2rgb_write_full(c, dest, i, R, A, G, B, y, target, hasAlpha, err);
++        dest += step;
++    }
++    c->dither_error[0][i] = err[0];
++    c->dither_error[1][i] = err[1];
++    c->dither_error[2][i] = err[2];
++}
++
++static void
++yuv2rgb_full_2_template_lsx(SwsContext *c, const int16_t *buf[2],
++                            const int16_t *ubuf[2], const int16_t *vbuf[2],
++                            const int16_t *abuf[2], uint8_t *dest, int dstW,
++                            int yalpha, int uvalpha, int y,
++                            enum AVPixelFormat target, int hasAlpha)
++{
++    const int16_t *buf0  = buf[0],  *buf1  = buf[1],
++                  *ubuf0 = ubuf[0], *ubuf1 = ubuf[1],
++                  *vbuf0 = vbuf[0], *vbuf1 = vbuf[1],
++                  *abuf0 = hasAlpha ? abuf[0] : NULL,
++                  *abuf1 = hasAlpha ? abuf[1] : NULL;
++    int yalpha1  = 4096 - yalpha;
++    int uvalpha1 = 4096 - uvalpha;
++    int uvtemp   = 128 << 19;
++    int atemp    = 1 << 18;
++    int err[4]   = {0};
++    int ytemp    = 1 << 21;
++    int len      = dstW - 7;
++    int i, R, G, B, A;
++    int step = (target == AV_PIX_FMT_RGB24 ||
++                target == AV_PIX_FMT_BGR24) ? 3 : 4;
++    __m128i v_uvalpha1 = __lsx_vreplgr2vr_w(uvalpha1);
++    __m128i v_yalpha1  = __lsx_vreplgr2vr_w(yalpha1);
++    __m128i v_uvalpha  = __lsx_vreplgr2vr_w(uvalpha);
++    __m128i v_yalpha   = __lsx_vreplgr2vr_w(yalpha);
++    __m128i uv         = __lsx_vreplgr2vr_w(uvtemp);
++    __m128i a_bias     = __lsx_vreplgr2vr_w(atemp);
++    __m128i y_temp     = __lsx_vreplgr2vr_w(ytemp);
++    YUVTORGB_SETUP_LSX
++
++    av_assert2(yalpha  <= 4096U);
++    av_assert2(uvalpha <= 4096U);
++
++    if(   target == AV_PIX_FMT_BGR4_BYTE || target == AV_PIX_FMT_RGB4_BYTE
++       || target == AV_PIX_FMT_BGR8      || target == AV_PIX_FMT_RGB8)
++        step = 1;
++
++    for (i = 0; i < len; i += 8) {
++        __m128i b0, b1, ub0, ub1, vb0, vb1;
++        __m128i y0_l, y0_h, y1_l, y1_h, u0_l, u0_h;
++        __m128i v0_l, v0_h, u1_l, u1_h, v1_l, v1_h;
++        __m128i y_l, y_h, v_l, v_h, u_l, u_h;
++        __m128i R_l, R_h, G_l, G_h, B_l, B_h;
++        int n = i << 1;
++
++        DUP4_ARG2(__lsx_vldx, buf0, n, buf1, n, ubuf0,
++                  n, ubuf1, n, b0, b1, ub0, ub1);
++        DUP2_ARG2(__lsx_vldx, vbuf0, n, vbuf1, n, vb0 , vb1);
++        DUP2_ARG2(__lsx_vsllwil_w_h, b0, 0, b1, 0, y0_l, y1_l);
++        DUP4_ARG2(__lsx_vsllwil_w_h, ub0, 0, ub1, 0, vb0, 0, vb1, 0,
++                  u0_l, u1_l, v0_l, v1_l);
++        DUP2_ARG1(__lsx_vexth_w_h, b0, b1, y0_h, y1_h);
++        DUP4_ARG1(__lsx_vexth_w_h, ub0, ub1, vb0, vb1,
++                  u0_h, u1_h, v0_h, v1_h);
++        y0_l = __lsx_vmul_w(y0_l, v_yalpha1);
++        y0_h = __lsx_vmul_w(y0_h, v_yalpha1);
++        u0_l = __lsx_vmul_w(u0_l, v_uvalpha1);
++        u0_h = __lsx_vmul_w(u0_h, v_uvalpha1);
++        v0_l = __lsx_vmul_w(v0_l, v_uvalpha1);
++        v0_h = __lsx_vmul_w(v0_h, v_uvalpha1);
++        y_l  = __lsx_vmadd_w(y0_l, v_yalpha, y1_l);
++        y_h  = __lsx_vmadd_w(y0_h, v_yalpha, y1_h);
++        u_l  = __lsx_vmadd_w(u0_l, v_uvalpha, u1_l);
++        u_h  = __lsx_vmadd_w(u0_h, v_uvalpha, u1_h);
++        v_l  = __lsx_vmadd_w(v0_l, v_uvalpha, v1_l);
++        v_h  = __lsx_vmadd_w(v0_h, v_uvalpha, v1_h);
++        u_l  = __lsx_vsub_w(u_l, uv);
++        u_h  = __lsx_vsub_w(u_h, uv);
++        v_l  = __lsx_vsub_w(v_l, uv);
++        v_h  = __lsx_vsub_w(v_h, uv);
++        y_l  = __lsx_vsrai_w(y_l, 10);
++        y_h  = __lsx_vsrai_w(y_h, 10);
++        u_l  = __lsx_vsrai_w(u_l, 10);
++        u_h  = __lsx_vsrai_w(u_h, 10);
++        v_l  = __lsx_vsrai_w(v_l, 10);
++        v_h  = __lsx_vsrai_w(v_h, 10);
++        YUVTORGB_LSX(y_l, u_l, v_l, R_l, G_l, B_l, offset, coeff,
++                     y_temp, v2r, v2g, u2g, u2b);
++        YUVTORGB_LSX(y_h, u_h, v_h, R_h, G_h, B_h, offset, coeff,
++                     y_temp, v2r, v2g, u2g, u2b);
++
++        if (hasAlpha) {
++            __m128i a0, a1, a0_l, a0_h;
++            __m128i a_l, a_h, a1_l, a1_h;
++
++            DUP2_ARG2(__lsx_vldx, abuf0, n, abuf1, n, a0, a1);
++            DUP2_ARG2(__lsx_vsllwil_w_h, a0, 0, a1, 0, a0_l, a1_l);
++            DUP2_ARG1(__lsx_vexth_w_h, a0, a1, a0_h, a1_h);
++            a_l = __lsx_vmadd_w(a_bias, a0_l, v_yalpha1);
++            a_h = __lsx_vmadd_w(a_bias, a0_h, v_yalpha1);
++            a_l = __lsx_vmadd_w(a_l, v_yalpha, a1_l);
++            a_h = __lsx_vmadd_w(a_h, v_yalpha, a1_h);
++            a_l = __lsx_vsrai_w(a_l, 19);
++            a_h = __lsx_vsrai_w(a_h, 19);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 0, 0);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 1, 1);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 2, 2);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 3, 3);
++            WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 0, 4);
++            WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 1, 5);
++            WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 2, 6);
++            WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 3, 7);
++        } else {
++            WRITE_FULL_LSX(R_l, G_l, B_l, 0, 0);
++            WRITE_FULL_LSX(R_l, G_l, B_l, 1, 1);
++            WRITE_FULL_LSX(R_l, G_l, B_l, 2, 2);
++            WRITE_FULL_LSX(R_l, G_l, B_l, 3, 3);
++            WRITE_FULL_LSX(R_h, G_h, B_h, 0, 4);
++            WRITE_FULL_LSX(R_h, G_h, B_h, 1, 5);
++            WRITE_FULL_LSX(R_h, G_h, B_h, 2, 6);
++            WRITE_FULL_LSX(R_h, G_h, B_h, 3, 7);
++        }
++    }
++    if (dstW - i >= 4) {
++        __m128i b0, b1, ub0, ub1, vb0, vb1;
++        __m128i y0_l, y1_l, u0_l;
++        __m128i v0_l, u1_l, v1_l;
++        __m128i y_l, u_l, v_l;
++        __m128i R_l, G_l, B_l;
++        int n = i << 1;
++
++        DUP4_ARG2(__lsx_vldx, buf0, n, buf1, n, ubuf0, n,
++                  ubuf1, n, b0, b1, ub0, ub1);
++        DUP2_ARG2(__lsx_vldx, vbuf0, n, vbuf1, n, vb0, vb1);
++        DUP2_ARG2(__lsx_vsllwil_w_h, b0, 0, b1, 0, y0_l, y1_l);
++        DUP4_ARG2(__lsx_vsllwil_w_h, ub0, 0, ub1, 0, vb0, 0, vb1, 0,
++                  u0_l, u1_l, v0_l, v1_l);
++        y0_l = __lsx_vmul_w(y0_l, v_yalpha1);
++        u0_l = __lsx_vmul_w(u0_l, v_uvalpha1);
++        v0_l = __lsx_vmul_w(v0_l, v_uvalpha1);
++        y_l  = __lsx_vmadd_w(y0_l, v_yalpha, y1_l);
++        u_l  = __lsx_vmadd_w(u0_l, v_uvalpha, u1_l);
++        v_l  = __lsx_vmadd_w(v0_l, v_uvalpha, v1_l);
++        u_l  = __lsx_vsub_w(u_l, uv);
++        v_l  = __lsx_vsub_w(v_l, uv);
++        y_l  = __lsx_vsrai_w(y_l, 10);
++        u_l  = __lsx_vsrai_w(u_l, 10);
++        v_l  = __lsx_vsrai_w(v_l, 10);
++        YUVTORGB_LSX(y_l, u_l, v_l, R_l, G_l, B_l, offset, coeff,
++                     y_temp, v2r, v2g, u2g, u2b);
++
++        if (hasAlpha) {
++            __m128i a0, a1, a0_l;
++            __m128i a_l, a1_l;
++
++            DUP2_ARG2(__lsx_vldx, abuf0, n, abuf1, n, a0, a1);
++            DUP2_ARG2(__lsx_vsllwil_w_h, a0, 0, a1, 0, a0_l, a1_l);
++            a_l = __lsx_vmadd_w(a_bias, a0_l, v_yalpha1);
++            a_l = __lsx_vmadd_w(a_l, v_yalpha, a1_l);
++            a_l = __lsx_vsrai_w(a_l, 19);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 0, 0);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 1, 1);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 2, 2);
++            WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 3, 3);
++        } else {
++            WRITE_FULL_LSX(R_l, G_l, B_l, 0, 0);
++            WRITE_FULL_LSX(R_l, G_l, B_l, 1, 1);
++            WRITE_FULL_LSX(R_l, G_l, B_l, 2, 2);
++            WRITE_FULL_LSX(R_l, G_l, B_l, 3, 3);
++        }
++        i += 4;
++    }
++    for (; i < dstW; i++){
++        int Y = ( buf0[i] * yalpha1  +  buf1[i] * yalpha         ) >> 10;
++        int U = (ubuf0[i] * uvalpha1 + ubuf1[i] * uvalpha- uvtemp) >> 10;
++        int V = (vbuf0[i] * uvalpha1 + vbuf1[i] * uvalpha- uvtemp) >> 10;
++
++        A = 0;
++        if (hasAlpha){
++            A = (abuf0[i] * yalpha1 + abuf1[i] * yalpha + atemp) >> 19;
++            if (A & 0x100)
++                A = av_clip_uint8(A);
++        }
++
++        Y -= y_offset;
++        Y *= y_coeff;
++        Y += ytemp;
++        R  = (unsigned)Y + V * v2r_coe;
++        G  = (unsigned)Y + V * v2g_coe + U * u2g_coe;
++        B  = (unsigned)Y + U * u2b_coe;
++        yuv2rgb_write_full(c, dest, i, R, A, G, B, y, target, hasAlpha, err);
++        dest += step;
++    }
++    c->dither_error[0][i] = err[0];
++    c->dither_error[1][i] = err[1];
++    c->dither_error[2][i] = err[2];
++}
++
++static void
++yuv2rgb_full_1_template_lsx(SwsContext *c, const int16_t *buf0,
++                            const int16_t *ubuf[2], const int16_t *vbuf[2],
++                            const int16_t *abuf0, uint8_t *dest, int dstW,
++                            int uvalpha, int y, enum AVPixelFormat target,
++                            int hasAlpha)
+ {
++    const int16_t *ubuf0 = ubuf[0], *vbuf0 = vbuf[0];
++    int i, B, G, R, A;
++    int step = (target == AV_PIX_FMT_RGB24 || target == AV_PIX_FMT_BGR24) ? 3 : 4;
++    int err[4]     = {0};
++    int ytemp      = 1 << 21;
++    int bias_int   = 64;
++    int len        = dstW - 7;
++    __m128i y_temp = __lsx_vreplgr2vr_w(ytemp);
++    YUVTORGB_SETUP_LSX
++
++    if(   target == AV_PIX_FMT_BGR4_BYTE || target == AV_PIX_FMT_RGB4_BYTE
++       || target == AV_PIX_FMT_BGR8      || target == AV_PIX_FMT_RGB8)
++        step = 1;
++    if (uvalpha < 2048) {
++        int uvtemp   = 128 << 7;
++        __m128i uv   = __lsx_vreplgr2vr_w(uvtemp);
++        __m128i bias = __lsx_vreplgr2vr_w(bias_int);
++
++        for (i = 0; i < len; i += 8) {
++            __m128i b, ub, vb, ub_l, ub_h, vb_l, vb_h;
++            __m128i y_l, y_h, u_l, u_h, v_l, v_h;
++            __m128i R_l, R_h, G_l, G_h, B_l, B_h;
++            int n = i << 1;
++
++            DUP2_ARG2(__lsx_vldx, buf0, n, ubuf0, n, b, ub);
++            vb  = __lsx_vldx(vbuf0, n);
++            y_l = __lsx_vsllwil_w_h(b, 2);
++            y_h = __lsx_vexth_w_h(b);
++            DUP2_ARG2(__lsx_vsllwil_w_h, ub, 0, vb, 0, ub_l, vb_l);
++            DUP2_ARG1(__lsx_vexth_w_h, ub, vb, ub_h, vb_h);
++            y_h = __lsx_vslli_w(y_h, 2);
++            u_l = __lsx_vsub_w(ub_l, uv);
++            u_h = __lsx_vsub_w(ub_h, uv);
++            v_l = __lsx_vsub_w(vb_l, uv);
++            v_h = __lsx_vsub_w(vb_h, uv);
++            u_l = __lsx_vslli_w(u_l, 2);
++            u_h = __lsx_vslli_w(u_h, 2);
++            v_l = __lsx_vslli_w(v_l, 2);
++            v_h = __lsx_vslli_w(v_h, 2);
++            YUVTORGB_LSX(y_l, u_l, v_l, R_l, G_l, B_l, offset, coeff,
++                         y_temp, v2r, v2g, u2g, u2b);
++            YUVTORGB_LSX(y_h, u_h, v_h, R_h, G_h, B_h, offset, coeff,
++                         y_temp, v2r, v2g, u2g, u2b);
++
++            if(hasAlpha) {
++                __m128i a_src;
++                __m128i a_l, a_h;
++
++                a_src = __lsx_vld(abuf0 + i, 0);
++                a_l   = __lsx_vsllwil_w_h(a_src, 0);
++                a_h   = __lsx_vexth_w_h(a_src);
++                a_l   = __lsx_vadd_w(a_l, bias);
++                a_h   = __lsx_vadd_w(a_h, bias);
++                a_l   = __lsx_vsrai_w(a_l, 7);
++                a_h   = __lsx_vsrai_w(a_h, 7);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 0, 0);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 1, 1);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 2, 2);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 3, 3);
++                WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 0, 4);
++                WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 1, 5);
++                WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 2, 6);
++                WRITE_FULL_A_LSX(R_h, G_h, B_h, a_h, 3, 7);
++            } else {
++                WRITE_FULL_LSX(R_l, G_l, B_l, 0, 0);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 1, 1);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 2, 2);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 3, 3);
++                WRITE_FULL_LSX(R_h, G_h, B_h, 0, 4);
++                WRITE_FULL_LSX(R_h, G_h, B_h, 1, 5);
++                WRITE_FULL_LSX(R_h, G_h, B_h, 2, 6);
++                WRITE_FULL_LSX(R_h, G_h, B_h, 3, 7);
++            }
++        }
++        if (dstW - i >= 4) {
++            __m128i b, ub, vb, ub_l, vb_l;
++            __m128i y_l, u_l, v_l;
++            __m128i R_l, G_l, B_l;
++            int n = i << 1;
++
++            DUP2_ARG2(__lsx_vldx, buf0, n, ubuf0, n, b, ub);
++            vb  = __lsx_vldx(vbuf0, n);
++            y_l = __lsx_vsllwil_w_h(b, 0);
++            DUP2_ARG2(__lsx_vsllwil_w_h, ub, 0, vb, 0, ub_l, vb_l);
++            y_l = __lsx_vslli_w(y_l, 2);
++            u_l = __lsx_vsub_w(ub_l, uv);
++            v_l = __lsx_vsub_w(vb_l, uv);
++            u_l = __lsx_vslli_w(u_l, 2);
++            v_l = __lsx_vslli_w(v_l, 2);
++            YUVTORGB_LSX(y_l, u_l, v_l, R_l, G_l, B_l, offset, coeff,
++                         y_temp, v2r, v2g, u2g, u2b);
++
++            if(hasAlpha) {
++                __m128i a_src, a_l;
++
++                a_src = __lsx_vldx(abuf0, n);
++                a_src = __lsx_vsllwil_w_h(a_src, 0);
++                a_l   = __lsx_vadd_w(bias, a_src);
++                a_l   = __lsx_vsrai_w(a_l, 7);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 0, 0);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 1, 1);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 2, 2);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 3, 3);
++            } else {
++                WRITE_FULL_LSX(R_l, G_l, B_l, 0, 0);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 1, 1);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 2, 2);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 3, 3);
++            }
++            i += 4;
++        }
++        for (; i < dstW; i++) {
++            int Y = buf0[i] << 2;
++            int U = (ubuf0[i] - uvtemp) << 2;
++            int V = (vbuf0[i] - uvtemp) << 2;
++
++            A = 0;
++            if(hasAlpha) {
++                A = (abuf0[i] + 64) >> 7;
++                if (A & 0x100)
++                    A = av_clip_uint8(A);
++            }
++            Y -= y_offset;
++            Y *= y_coeff;
++            Y += ytemp;
++            R  = (unsigned)Y + V * v2r_coe;
++            G  = (unsigned)Y + V * v2g_coe + U * u2g_coe;
++            B  = (unsigned)Y + U * u2b_coe;
++            yuv2rgb_write_full(c, dest, i, R, A, G, B, y, target, hasAlpha, err);
++            dest += step;
++        }
++    } else {
++        const int16_t *ubuf1 = ubuf[1], *vbuf1 = vbuf[1];
++        int uvtemp   = 128 << 8;
++        __m128i uv   = __lsx_vreplgr2vr_w(uvtemp);
++        __m128i zero = __lsx_vldi(0);
++        __m128i bias = __lsx_vreplgr2vr_h(bias_int);
++
++        for (i = 0; i < len; i += 8) {
++            __m128i b, ub0, ub1, vb0, vb1;
++            __m128i y_ev, y_od, u_ev, u_od, v_ev, v_od;
++            __m128i R_ev, R_od, G_ev, G_od, B_ev, B_od;
++            int n = i << 1;
++
++            DUP4_ARG2(__lsx_vldx, buf0, n, ubuf0, n, vbuf0, n,
++                      ubuf1, n, b, ub0, vb0, ub1);
++            vb1 = __lsx_vldx(vbuf, n);
++            y_ev = __lsx_vaddwev_w_h(b, zero);
++            y_od = __lsx_vaddwod_w_h(b, zero);
++            DUP2_ARG2(__lsx_vaddwev_w_h, ub0, vb0, ub1, vb1, u_ev, v_ev);
++            DUP2_ARG2(__lsx_vaddwod_w_h, ub0, vb0, ub1, vb1, u_od, v_od);
++            DUP2_ARG2(__lsx_vslli_w, y_ev, 2, y_od, 2, y_ev, y_od);
++            DUP4_ARG2(__lsx_vsub_w, u_ev, uv, u_od, uv, v_ev, uv, v_od, uv,
++                      u_ev, u_od, v_ev, v_od);
++            DUP4_ARG2(__lsx_vslli_w, u_ev, 1, u_od, 1, v_ev, 1, v_od, 1,
++                      u_ev, u_od, v_ev, v_od);
++            YUVTORGB_LSX(y_ev, u_ev, v_ev, R_ev, G_ev, B_ev, offset, coeff,
++                         y_temp, v2r, v2g, u2g, u2b);
++            YUVTORGB_LSX(y_od, u_od, v_od, R_od, G_od, B_od, offset, coeff,
++                         y_temp, v2r, v2g, u2g, u2b);
++
++            if(hasAlpha) {
++                __m128i a_src;
++                __m128i a_ev, a_od;
++
++                a_src = __lsx_vld(abuf0 + i, 0);
++                a_ev  = __lsx_vaddwev_w_h(bias, a_src);
++                a_od  = __lsx_vaddwod_w_h(bias, a_src);
++                a_ev  = __lsx_vsrai_w(a_ev, 7);
++                a_od  = __lsx_vsrai_w(a_od, 7);
++                WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 0, 0);
++                WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 0, 1);
++                WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 1, 2);
++                WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 1, 3);
++                WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 2, 4);
++                WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 2, 5);
++                WRITE_FULL_A_LSX(R_ev, G_ev, B_ev, a_ev, 3, 6);
++                WRITE_FULL_A_LSX(R_od, G_od, B_od, a_od, 3, 7);
++            } else {
++                WRITE_FULL_LSX(R_ev, G_ev, B_ev, 0, 0);
++                WRITE_FULL_LSX(R_od, G_od, B_od, 0, 1);
++                WRITE_FULL_LSX(R_ev, G_ev, B_ev, 1, 2);
++                WRITE_FULL_LSX(R_od, G_od, B_od, 1, 3);
++                WRITE_FULL_LSX(R_ev, G_ev, B_ev, 2, 4);
++                WRITE_FULL_LSX(R_od, G_od, B_od, 2, 5);
++                WRITE_FULL_LSX(R_ev, G_ev, B_ev, 3, 6);
++                WRITE_FULL_LSX(R_od, G_od, B_od, 3, 7);
++            }
++        }
++        if (dstW - i >= 4) {
++            __m128i b, ub0, ub1, vb0, vb1;
++            __m128i y_l, u_l, v_l;
++            __m128i R_l, G_l, B_l;
++            int n = i << 1;
++
++            DUP4_ARG2(__lsx_vldx, buf0, n, ubuf0, n, vbuf0, n,
++                      ubuf1, n, b, ub0, vb0, ub1);
++            vb1 = __lsx_vldx(vbuf1, n);
++            y_l = __lsx_vsllwil_w_h(b, 0);
++            y_l = __lsx_vslli_w(y_l, 2);
++            DUP4_ARG2(__lsx_vsllwil_w_h, ub0, 0, vb0, 0, ub1, 0, vb1, 0,
++                      ub0, vb0, ub1, vb1);
++            DUP2_ARG2(__lsx_vadd_w, ub0, ub1, vb0, vb1, u_l, v_l);
++            u_l = __lsx_vsub_w(u_l, uv);
++            v_l = __lsx_vsub_w(v_l, uv);
++            u_l = __lsx_vslli_w(u_l, 1);
++            v_l = __lsx_vslli_w(v_l, 1);
++            YUVTORGB_LSX(y_l, u_l, v_l, R_l, G_l, B_l, offset, coeff,
++                         y_temp, v2r, v2g, u2g, u2b);
++
++            if(hasAlpha) {
++                __m128i a_src;
++                __m128i a_l;
++
++                a_src  = __lsx_vld(abuf0 + i, 0);
++                a_src  = __lsx_vilvl_h(a_src, a_src);
++                a_l    = __lsx_vaddwev_w_h(bias, a_l);
++                a_l   = __lsx_vsrai_w(a_l, 7);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 0, 0);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 1, 1);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 2, 2);
++                WRITE_FULL_A_LSX(R_l, G_l, B_l, a_l, 3, 3);
++            } else {
++                WRITE_FULL_LSX(R_l, G_l, B_l, 0, 0);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 1, 1);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 2, 2);
++                WRITE_FULL_LSX(R_l, G_l, B_l, 3, 3);
++            }
++            i += 4;
++        }
++        for (; i < dstW; i++) {
++            int Y = buf0[i] << 2;
++            int U = (ubuf0[i] + ubuf1[i] - uvtemp) << 1;
++            int V = (vbuf0[i] + vbuf1[i] - uvtemp) << 1;
++
++            A = 0;
++            if(hasAlpha) {
++                A = (abuf0[i] + 64) >> 7;
++                if (A & 0x100)
++                    A = av_clip_uint8(A);
++            }
++            Y -= y_offset;
++            Y *= y_coeff;
++            Y += ytemp;
++            R  = (unsigned)Y + V * v2r_coe;
++            G  = (unsigned)Y + V * v2g_coe + U * u2g_coe;
++            B  = (unsigned)Y + U * u2b_coe;
++            yuv2rgb_write_full(c, dest, i, R, A, G, B, y, target, hasAlpha, err);
++            dest += step;
++        }
++    }
++    c->dither_error[0][i] = err[0];
++    c->dither_error[1][i] = err[1];
++    c->dither_error[2][i] = err[2];
++}
++
++#if CONFIG_SMALL
++YUV2RGBWRAPPER(yuv2, rgb_full, bgra32_full, AV_PIX_FMT_BGRA,
++               CONFIG_SWSCALE_ALPHA && c->needAlpha)
++YUV2RGBWRAPPER(yuv2, rgb_full, abgr32_full, AV_PIX_FMT_ABGR,
++               CONFIG_SWSCALE_ALPHA && c->needAlpha)
++YUV2RGBWRAPPER(yuv2, rgb_full, rgba32_full, AV_PIX_FMT_RGBA,
++               CONFIG_SWSCALE_ALPHA && c->needAlpha)
++YUV2RGBWRAPPER(yuv2, rgb_full, argb32_full, AV_PIX_FMT_ARGB,
++               CONFIG_SWSCALE_ALPHA && c->needAlpha)
++#else
++#if CONFIG_SWSCALE_ALPHA
++YUV2RGBWRAPPER(yuv2, rgb_full, bgra32_full, AV_PIX_FMT_BGRA,  1)
++YUV2RGBWRAPPER(yuv2, rgb_full, abgr32_full, AV_PIX_FMT_ABGR,  1)
++YUV2RGBWRAPPER(yuv2, rgb_full, rgba32_full, AV_PIX_FMT_RGBA,  1)
++YUV2RGBWRAPPER(yuv2, rgb_full, argb32_full, AV_PIX_FMT_ARGB,  1)
++#endif
++YUV2RGBWRAPPER(yuv2, rgb_full, bgrx32_full, AV_PIX_FMT_BGRA,  0)
++YUV2RGBWRAPPER(yuv2, rgb_full, xbgr32_full, AV_PIX_FMT_ABGR,  0)
++YUV2RGBWRAPPER(yuv2, rgb_full, rgbx32_full, AV_PIX_FMT_RGBA,  0)
++YUV2RGBWRAPPER(yuv2, rgb_full, xrgb32_full, AV_PIX_FMT_ARGB,  0)
++#endif
++YUV2RGBWRAPPER(yuv2, rgb_full, bgr24_full,  AV_PIX_FMT_BGR24, 0)
++YUV2RGBWRAPPER(yuv2, rgb_full, rgb24_full,  AV_PIX_FMT_RGB24, 0)
+ 
++YUV2RGBWRAPPER(yuv2, rgb_full, bgr4_byte_full,  AV_PIX_FMT_BGR4_BYTE, 0)
++YUV2RGBWRAPPER(yuv2, rgb_full, rgb4_byte_full,  AV_PIX_FMT_RGB4_BYTE, 0)
++YUV2RGBWRAPPER(yuv2, rgb_full, bgr8_full,   AV_PIX_FMT_BGR8,  0)
++YUV2RGBWRAPPER(yuv2, rgb_full, rgb8_full,   AV_PIX_FMT_RGB8,  0)
++
++
++av_cold void ff_sws_init_output_lsx(SwsContext *c)
++{
+     if(c->flags & SWS_FULL_CHR_H_INT) {
++        switch (c->dstFormat) {
++        case AV_PIX_FMT_RGBA:
++#if CONFIG_SMALL
++            c->yuv2packedX = yuv2rgba32_full_X_lsx;
++            c->yuv2packed2 = yuv2rgba32_full_2_lsx;
++            c->yuv2packed1 = yuv2rgba32_full_1_lsx;
++#else
++#if CONFIG_SWSCALE_ALPHA
++            if (c->needAlpha) {
++                c->yuv2packedX = yuv2rgba32_full_X_lsx;
++                c->yuv2packed2 = yuv2rgba32_full_2_lsx;
++                c->yuv2packed1 = yuv2rgba32_full_1_lsx;
++            } else
++#endif /* CONFIG_SWSCALE_ALPHA */
++            {
++                c->yuv2packedX = yuv2rgbx32_full_X_lsx;
++                c->yuv2packed2 = yuv2rgbx32_full_2_lsx;
++                c->yuv2packed1 = yuv2rgbx32_full_1_lsx;
++            }
++#endif /* !CONFIG_SMALL */
++            break;
++        case AV_PIX_FMT_ARGB:
++#if CONFIG_SMALL
++            c->yuv2packedX = yuv2argb32_full_X_lsx;
++            c->yuv2packed2 = yuv2argb32_full_2_lsx;
++            c->yuv2packed1 = yuv2argb32_full_1_lsx;
++#else
++#if CONFIG_SWSCALE_ALPHA
++            if (c->needAlpha) {
++                c->yuv2packedX = yuv2argb32_full_X_lsx;
++                c->yuv2packed2 = yuv2argb32_full_2_lsx;
++                c->yuv2packed1 = yuv2argb32_full_1_lsx;
++            } else
++#endif /* CONFIG_SWSCALE_ALPHA */
++            {
++                c->yuv2packedX = yuv2xrgb32_full_X_lsx;
++                c->yuv2packed2 = yuv2xrgb32_full_2_lsx;
++                c->yuv2packed1 = yuv2xrgb32_full_1_lsx;
++            }
++#endif /* !CONFIG_SMALL */
++            break;
++        case AV_PIX_FMT_BGRA:
++#if CONFIG_SMALL
++            c->yuv2packedX = yuv2bgra32_full_X_lsx;
++            c->yuv2packed2 = yuv2bgra32_full_2_lsx;
++            c->yuv2packed1 = yuv2bgra32_full_1_lsx;
++#else
++#if CONFIG_SWSCALE_ALPHA
++            if (c->needAlpha) {
++                c->yuv2packedX = yuv2bgra32_full_X_lsx;
++                c->yuv2packed2 = yuv2bgra32_full_2_lsx;
++                c->yuv2packed1 = yuv2bgra32_full_1_lsx;
++            } else
++#endif /* CONFIG_SWSCALE_ALPHA */
++            {
++                c->yuv2packedX = yuv2bgrx32_full_X_lsx;
++                c->yuv2packed2 = yuv2bgrx32_full_2_lsx;
++                c->yuv2packed1 = yuv2bgrx32_full_1_lsx;
++            }
++#endif /* !CONFIG_SMALL */
++            break;
++        case AV_PIX_FMT_ABGR:
++#if CONFIG_SMALL
++            c->yuv2packedX = yuv2abgr32_full_X_lsx;
++            c->yuv2packed2 = yuv2abgr32_full_2_lsx;
++            c->yuv2packed1 = yuv2abgr32_full_1_lsx;
++#else
++#if CONFIG_SWSCALE_ALPHA
++            if (c->needAlpha) {
++                c->yuv2packedX = yuv2abgr32_full_X_lsx;
++                c->yuv2packed2 = yuv2abgr32_full_2_lsx;
++                c->yuv2packed1 = yuv2abgr32_full_1_lsx;
++            } else
++#endif /* CONFIG_SWSCALE_ALPHA */
++            {
++                c->yuv2packedX = yuv2xbgr32_full_X_lsx;
++                c->yuv2packed2 = yuv2xbgr32_full_2_lsx;
++                c->yuv2packed1 = yuv2xbgr32_full_1_lsx;
++            }
++#endif /* !CONFIG_SMALL */
++            break;
++        case AV_PIX_FMT_RGB24:
++            c->yuv2packedX = yuv2rgb24_full_X_lsx;
++            c->yuv2packed2 = yuv2rgb24_full_2_lsx;
++            c->yuv2packed1 = yuv2rgb24_full_1_lsx;
++            break;
++        case AV_PIX_FMT_BGR24:
++            c->yuv2packedX = yuv2bgr24_full_X_lsx;
++            c->yuv2packed2 = yuv2bgr24_full_2_lsx;
++            c->yuv2packed1 = yuv2bgr24_full_1_lsx;
++            break;
++        case AV_PIX_FMT_BGR4_BYTE:
++            c->yuv2packedX = yuv2bgr4_byte_full_X_lsx;
++            c->yuv2packed2 = yuv2bgr4_byte_full_2_lsx;
++            c->yuv2packed1 = yuv2bgr4_byte_full_1_lsx;
++            break;
++        case AV_PIX_FMT_RGB4_BYTE:
++            c->yuv2packedX = yuv2rgb4_byte_full_X_lsx;
++            c->yuv2packed2 = yuv2rgb4_byte_full_2_lsx;
++            c->yuv2packed1 = yuv2rgb4_byte_full_1_lsx;
++            break;
++        case AV_PIX_FMT_BGR8:
++            c->yuv2packedX = yuv2bgr8_full_X_lsx;
++            c->yuv2packed2 = yuv2bgr8_full_2_lsx;
++            c->yuv2packed1 = yuv2bgr8_full_1_lsx;
++            break;
++        case AV_PIX_FMT_RGB8:
++            c->yuv2packedX = yuv2rgb8_full_X_lsx;
++            c->yuv2packed2 = yuv2rgb8_full_2_lsx;
++            c->yuv2packed1 = yuv2rgb8_full_1_lsx;
++            break;
++    }
+     } else {
+         switch (c->dstFormat) {
+         case AV_PIX_FMT_RGB32:
+@@ -520,6 +1750,8 @@ av_cold void ff_sws_init_output_lsx(SwsContext *c)
+             } else
+ #endif /* CONFIG_SWSCALE_ALPHA */
+             {
++                c->yuv2packed1 = yuv2rgbx32_1_lsx;
++                c->yuv2packed2 = yuv2rgbx32_2_lsx;
+                 c->yuv2packedX = yuv2rgbx32_X_lsx;
+             }
+ #endif /* !CONFIG_SMALL */
+@@ -533,44 +1765,62 @@ av_cold void ff_sws_init_output_lsx(SwsContext *c)
+             } else
+ #endif /* CONFIG_SWSCALE_ALPHA */
+             {
++                c->yuv2packed1 = yuv2rgbx32_1_1_lsx;
++                c->yuv2packed2 = yuv2rgbx32_1_2_lsx;
+                 c->yuv2packedX = yuv2rgbx32_1_X_lsx;
+             }
+ #endif /* !CONFIG_SMALL */
+             break;
+         case AV_PIX_FMT_RGB24:
++            c->yuv2packed1 = yuv2rgb24_1_lsx;
++            c->yuv2packed2 = yuv2rgb24_2_lsx;
+             c->yuv2packedX = yuv2rgb24_X_lsx;
+             break;
+         case AV_PIX_FMT_BGR24:
++            c->yuv2packed1 = yuv2bgr24_1_lsx;
++            c->yuv2packed2 = yuv2bgr24_2_lsx;
+             c->yuv2packedX = yuv2bgr24_X_lsx;
+             break;
+         case AV_PIX_FMT_RGB565LE:
+         case AV_PIX_FMT_RGB565BE:
+         case AV_PIX_FMT_BGR565LE:
+         case AV_PIX_FMT_BGR565BE:
++            c->yuv2packed1 = yuv2rgb16_1_lsx;
++            c->yuv2packed2 = yuv2rgb16_2_lsx;
+             c->yuv2packedX = yuv2rgb16_X_lsx;
+             break;
+         case AV_PIX_FMT_RGB555LE:
+         case AV_PIX_FMT_RGB555BE:
+         case AV_PIX_FMT_BGR555LE:
+         case AV_PIX_FMT_BGR555BE:
++            c->yuv2packed1 = yuv2rgb15_1_lsx;
++            c->yuv2packed2 = yuv2rgb15_2_lsx;
+             c->yuv2packedX = yuv2rgb15_X_lsx;
+             break;
+         case AV_PIX_FMT_RGB444LE:
+         case AV_PIX_FMT_RGB444BE:
+         case AV_PIX_FMT_BGR444LE:
+         case AV_PIX_FMT_BGR444BE:
++            c->yuv2packed1 = yuv2rgb12_1_lsx;
++            c->yuv2packed2 = yuv2rgb12_2_lsx;
+             c->yuv2packedX = yuv2rgb12_X_lsx;
+             break;
+         case AV_PIX_FMT_RGB8:
+         case AV_PIX_FMT_BGR8:
++            c->yuv2packed1 = yuv2rgb8_1_lsx;
++            c->yuv2packed2 = yuv2rgb8_2_lsx;
+             c->yuv2packedX = yuv2rgb8_X_lsx;
+             break;
+         case AV_PIX_FMT_RGB4:
+         case AV_PIX_FMT_BGR4:
++            c->yuv2packed1 = yuv2rgb4_1_lsx;
++            c->yuv2packed2 = yuv2rgb4_2_lsx;
+             c->yuv2packedX = yuv2rgb4_X_lsx;
+             break;
+         case AV_PIX_FMT_RGB4_BYTE:
+         case AV_PIX_FMT_BGR4_BYTE:
++            c->yuv2packed1 = yuv2rgb4b_1_lsx;
++            c->yuv2packed2 = yuv2rgb4b_2_lsx;
+             c->yuv2packedX = yuv2rgb4b_X_lsx;
+             break;
+         }
+-- 
+2.20.1
+
