@@ -1,3 +1,9 @@
+ffmpeg (7:4.4.2-1deepin1) unstable; urgency=medium
+
+  * import a patch from upstream to fix sdl2 check
+
+ -- Chang Yang <yangchang@deepin.org>  Thu, 28 Sep 2023 15:42:23 +0800
+
 ffmpeg (7:4.4.2-1) unstable; urgency=medium
 
   * New upstream version 4.4.2
