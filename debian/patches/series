@@ -1,2 +1,3 @@
 0001-avcodec-arm-sbcenc-avoid-callee-preserved-vfp-regist.patch
 0002-configure-arm-Don-t-add-march-to-the-compiler-if-no-.patch
+0003-extend-sdl-check.patch
