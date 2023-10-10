@@ -1,0 +1,19 @@
+# SymbolsHelper-Confirmed: 7:6.0 amd64
+libavdevice.so.60 libavdevice60 #MINVER#
+* Build-Depends-Package: libavdevice-dev
+ LIBAVDEVICE_60@LIBAVDEVICE_60 @DEB_VERSION_EPOCH_UPSTREAM@
+ av_device_ffversion@LIBAVDEVICE_60 7:6.0
+ av_input_audio_device_next@LIBAVDEVICE_60 7:6.0
+ av_input_video_device_next@LIBAVDEVICE_60 7:6.0
+ av_output_audio_device_next@LIBAVDEVICE_60 7:6.0
+ av_output_video_device_next@LIBAVDEVICE_60 7:6.0
+ avdevice_app_to_dev_control_message@LIBAVDEVICE_60 7:6.0
+ avdevice_configuration@LIBAVDEVICE_60 7:6.0
+ avdevice_dev_to_app_control_message@LIBAVDEVICE_60 7:6.0
+ avdevice_free_list_devices@LIBAVDEVICE_60 7:6.0
+ avdevice_license@LIBAVDEVICE_60 7:6.0
+ avdevice_list_devices@LIBAVDEVICE_60 7:6.0
+ avdevice_list_input_sources@LIBAVDEVICE_60 7:6.0
+ avdevice_list_output_sinks@LIBAVDEVICE_60 7:6.0
+ avdevice_register_all@LIBAVDEVICE_60 7:6.0
+ avdevice_version@LIBAVDEVICE_60 7:6.0

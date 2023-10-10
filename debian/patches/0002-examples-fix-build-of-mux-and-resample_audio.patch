@@ -1,0 +1,28 @@
+From: Sebastian Ramacher <sramacher@debian.org>
+Date: Sun, 16 Apr 2023 13:39:27 +0200
+Subject: examples: fix build of mux and resample_audio
+
+The commits 0a69ca656b7178c260f68d50d07b2e16a073050c and
+cd8211527efbb9cad19db1c0d033da0749836e43 renamed the examples, but the
+targets were not updated. Hence, the builds are missing -lm.
+
+Signed-off-by: Sebastian Ramacher <sramacher@debian.org>
+---
+ doc/examples/Makefile.example | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/doc/examples/Makefile.example b/doc/examples/Makefile.example
+index 01712f4..dee9ebf 100644
+--- a/doc/examples/Makefile.example
++++ b/doc/examples/Makefile.example
+@@ -43,8 +43,8 @@ OBJS=$(addsuffix .o,$(EXAMPLES))
+ # the following examples make explicit use of the math library
+ avcodec:           LDLIBS += -lm
+ encode_audio:      LDLIBS += -lm
+-muxing:            LDLIBS += -lm
+-resampling_audio:  LDLIBS += -lm
++mux:               LDLIBS += -lm
++resample_audio:    LDLIBS += -lm
+ 
+ .phony: all clean-test clean
+ 

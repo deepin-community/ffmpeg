@@ -23,6 +23,7 @@
 #include "libavutil/opt.h"
 #include "avformat.h"
 #include "avio_internal.h"
+#include "mux.h"
 
 typedef struct MuxChain {
     const AVClass *class;
@@ -56,8 +57,8 @@ static int rtp_mpegts_write_header(AVFormatContext *s)
 {
     MuxChain *chain = s->priv_data;
     AVFormatContext *mpegts_ctx = NULL, *rtp_ctx = NULL;
-    ff_const59 AVOutputFormat *mpegts_format = av_guess_format("mpegts", NULL, NULL);
-    ff_const59 AVOutputFormat *rtp_format    = av_guess_format("rtp", NULL, NULL);
+    const AVOutputFormat *mpegts_format = av_guess_format("mpegts", NULL, NULL);
+    const AVOutputFormat *rtp_format    = av_guess_format("rtp", NULL, NULL);
     int i, ret = AVERROR(ENOMEM);
     AVStream *st;
     AVDictionary *mpegts_muxer_options = NULL;
@@ -187,14 +188,14 @@ static const AVClass rtp_mpegts_class = {
     .version    = LIBAVUTIL_VERSION_INT,
 };
 
-AVOutputFormat ff_rtp_mpegts_muxer = {
-    .name              = "rtp_mpegts",
-    .long_name         = NULL_IF_CONFIG_SMALL("RTP/mpegts output format"),
+const FFOutputFormat ff_rtp_mpegts_muxer = {
+    .p.name            = "rtp_mpegts",
+    .p.long_name       = NULL_IF_CONFIG_SMALL("RTP/mpegts output format"),
     .priv_data_size    = sizeof(MuxChain),
-    .audio_codec       = AV_CODEC_ID_AAC,
-    .video_codec       = AV_CODEC_ID_MPEG4,
+    .p.audio_codec     = AV_CODEC_ID_AAC,
+    .p.video_codec     = AV_CODEC_ID_MPEG4,
     .write_header      = rtp_mpegts_write_header,
     .write_packet      = rtp_mpegts_write_packet,
     .write_trailer     = rtp_mpegts_write_close,
-    .priv_class        = &rtp_mpegts_class,
+    .p.priv_class      = &rtp_mpegts_class,
 };

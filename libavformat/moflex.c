@@ -233,7 +233,7 @@ static int moflex_read_sync(AVFormatContext *s)
             st->codecpar->width      = width;
             st->codecpar->height     = height;
             st->codecpar->sample_rate= sample_rate;
-            st->codecpar->channels   = channels;
+            st->codecpar->ch_layout.nb_channels = channels;
             st->priv_data            = av_packet_alloc();
             if (!st->priv_data)
                 return AVERROR(ENOMEM);
@@ -365,16 +365,13 @@ static int moflex_read_seek(AVFormatContext *s, int stream_index,
 static int moflex_read_close(AVFormatContext *s)
 {
     for (int i = 0; i < s->nb_streams; i++) {
-        AVPacket *packet = s->streams[i]->priv_data;
-
-        av_packet_free(&packet);
-        s->streams[i]->priv_data = 0;
+        av_packet_free((AVPacket **)&s->streams[i]->priv_data);
     }
 
     return 0;
 }
 
-AVInputFormat ff_moflex_demuxer = {
+const AVInputFormat ff_moflex_demuxer = {
     .name           = "moflex",
     .long_name      = NULL_IF_CONFIG_SMALL("MobiClip MOFLEX"),
     .priv_data_size = sizeof(MOFLEXDemuxContext),
@@ -385,4 +382,5 @@ AVInputFormat ff_moflex_demuxer = {
     .read_close     = moflex_read_close,
     .extensions     = "moflex",
     .flags          = AVFMT_GENERIC_INDEX,
+    .flags_internal = FF_FMT_INIT_CLEANUP,
 };

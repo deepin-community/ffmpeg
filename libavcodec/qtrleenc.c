@@ -25,7 +25,8 @@
 #include "libavutil/imgutils.h"
 #include "avcodec.h"
 #include "bytestream.h"
-#include "internal.h"
+#include "codec_internal.h"
+#include "encode.h"
 
 /** Maximum RLE code for bulk copy */
 #define MAX_RLE_BULK   127
@@ -110,7 +111,7 @@ static av_cold int qtrle_encode_init(AVCodecContext *avctx)
 
     s->rlecode_table = av_mallocz(s->logical_width);
     s->skip_table    = av_mallocz(s->logical_width);
-    s->length_table  = av_mallocz_array(s->logical_width + 1, sizeof(int));
+    s->length_table  = av_calloc(s->logical_width + 1, sizeof(*s->length_table));
     if (!s->skip_table || !s->length_table || !s->rlecode_table) {
         av_log(avctx, AV_LOG_ERROR, "Error allocating memory.\n");
         return AVERROR(ENOMEM);
@@ -369,11 +370,11 @@ static int qtrle_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
     QtrleEncContext * const s = avctx->priv_data;
     int ret;
 
-    if ((ret = ff_alloc_packet2(avctx, pkt, s->max_buf_size, 0)) < 0)
+    if ((ret = ff_alloc_packet(avctx, pkt, s->max_buf_size)) < 0)
         return ret;
 
     if (avctx->gop_size == 0 || !s->previous_frame->data[0] ||
-        (s->avctx->frame_number % avctx->gop_size) == 0) {
+        (s->avctx->frame_num % avctx->gop_size) == 0) {
         /* I-Frame */
         s->key_frame = 1;
     } else {
@@ -391,13 +392,6 @@ static int qtrle_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
         return ret;
     }
 
-#if FF_API_CODED_FRAME
-FF_DISABLE_DEPRECATION_WARNINGS
-    avctx->coded_frame->key_frame = s->key_frame;
-    avctx->coded_frame->pict_type = s->key_frame ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_P;
-FF_ENABLE_DEPRECATION_WARNINGS
-#endif
-
     if (s->key_frame)
         pkt->flags |= AV_PKT_FLAG_KEY;
     *got_packet = 1;
@@ -405,16 +399,17 @@ FF_ENABLE_DEPRECATION_WARNINGS
     return 0;
 }
 
-AVCodec ff_qtrle_encoder = {
-    .name           = "qtrle",
-    .long_name      = NULL_IF_CONFIG_SMALL("QuickTime Animation (RLE) video"),
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_QTRLE,
+const FFCodec ff_qtrle_encoder = {
+    .p.name         = "qtrle",
+    CODEC_LONG_NAME("QuickTime Animation (RLE) video"),
+    .p.type         = AVMEDIA_TYPE_VIDEO,
+    .p.id           = AV_CODEC_ID_QTRLE,
+    .p.capabilities = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_ENCODER_REORDERED_OPAQUE,
     .priv_data_size = sizeof(QtrleEncContext),
     .init           = qtrle_encode_init,
-    .encode2        = qtrle_encode_frame,
+    FF_CODEC_ENCODE_CB(qtrle_encode_frame),
     .close          = qtrle_encode_end,
-    .pix_fmts       = (const enum AVPixelFormat[]){
+    .p.pix_fmts     = (const enum AVPixelFormat[]){
         AV_PIX_FMT_RGB24, AV_PIX_FMT_RGB555BE, AV_PIX_FMT_ARGB, AV_PIX_FMT_GRAY8, AV_PIX_FMT_NONE
     },
     .caps_internal  = FF_CODEC_CAP_INIT_CLEANUP,

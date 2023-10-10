@@ -1,3 +1,4 @@
-0001-avcodec-arm-sbcenc-avoid-callee-preserved-vfp-regist.patch
-0002-configure-arm-Don-t-add-march-to-the-compiler-if-no-.patch
-0003-extend-sdl-check.patch
+0001-avcodec-x86-mathops-clip-constants-used-with-shift-i.patch
+0002-examples-fix-build-of-mux-and-resample_audio.patch
+0003-avfilter-vf_libplacebo-wrap-deprecated-opts-in-FF_AP.patch
+0004-avfilter-vf_libplacebo-remove-deprecated-field.patch
