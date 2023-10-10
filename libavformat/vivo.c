@@ -249,7 +249,7 @@ static int vivo_read_header(AVFormatContext *s)
     ast->start_time        = 0;
     ast->codecpar->codec_tag  = 0;
     ast->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
-    ast->codecpar->channels = 1;
+    ast->codecpar->ch_layout.nb_channels = 1;
 
     return 0;
 }
@@ -314,7 +314,7 @@ restart:
     return ret;
 }
 
-AVInputFormat ff_vivo_demuxer = {
+const AVInputFormat ff_vivo_demuxer = {
     .name           = "vivo",
     .long_name      = NULL_IF_CONFIG_SMALL("Vivo"),
     .priv_data_size = sizeof(VivoContext),

@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
+#include "mux.h"
 #include "riff.h"
 #include "internal.h"
 #include "avio_internal.h"
@@ -62,7 +63,7 @@ typedef struct AMVContext
 
     int32_t aframe_size;  /* Expected audio frame size.      */
     int32_t ablock_align; /* Expected audio block align.     */
-    AVPacket *apad;       /* Dummy audio packet for padding. */
+    AVPacket *apad;       /* Dummy audio packet for padding; not owned by us. */
     AVPacket *vpad;       /* Most recent video frame, for padding. */
 
     /*
@@ -183,11 +184,8 @@ static av_cold int amv_init(AVFormatContext *s)
     }
 
     /* Allocate and fill dummy packet so we can pad the audio. */
-    amv->apad = av_packet_alloc();
-    if (!amv->apad)
-        return AVERROR(ENOMEM);
+    amv->apad = ffformatcontext(s)->pkt;
     if ((ret = av_new_packet(amv->apad, amv->ablock_align)) < 0) {
-        av_packet_free(&amv->apad);
         return ret;
     }
 
@@ -197,7 +195,6 @@ static av_cold int amv_init(AVFormatContext *s)
 
     amv->vpad = av_packet_alloc();
     if (!amv->vpad) {
-        av_packet_free(&amv->apad);
         return AVERROR(ENOMEM);
     }
     amv->vpad->stream_index = AMV_STREAM_VIDEO;
@@ -209,7 +206,6 @@ static void amv_deinit(AVFormatContext *s)
 {
     AMVContext *amv = s->priv_data;
 
-    av_packet_free(&amv->apad);
     av_packet_free(&amv->vpad);
 }
 
@@ -249,9 +245,9 @@ static void amv_write_alist(AVFormatContext *s, AVCodecParameters *par)
     /* Bodge an (incorrect) WAVEFORMATEX (+2 pad bytes) */
     tag_str = ff_start_tag(pb, "strf");
     AV_WL16(buf +  0, 1);
-    AV_WL16(buf +  2, par->channels);
+    AV_WL16(buf +  2, par->ch_layout.nb_channels);
     AV_WL32(buf +  4, par->sample_rate);
-    AV_WL32(buf +  8, par->sample_rate * par->channels * 2);
+    AV_WL32(buf +  8, par->sample_rate * par->ch_layout.nb_channels * 2);
     AV_WL16(buf + 12, 2);
     AV_WL16(buf + 14, 16);
     AV_WL16(buf + 16, 0);
@@ -406,14 +402,14 @@ static int amv_write_trailer(AVFormatContext *s)
     return 0;
 }
 
-AVOutputFormat ff_amv_muxer = {
-    .name           = "amv",
-    .long_name      = NULL_IF_CONFIG_SMALL("AMV"),
-    .mime_type      = "video/amv",
-    .extensions     = "amv",
+const FFOutputFormat ff_amv_muxer = {
+    .p.name         = "amv",
+    .p.long_name    = NULL_IF_CONFIG_SMALL("AMV"),
+    .p.mime_type    = "video/amv",
+    .p.extensions   = "amv",
     .priv_data_size = sizeof(AMVContext),
-    .audio_codec    = AV_CODEC_ID_ADPCM_IMA_AMV,
-    .video_codec    = AV_CODEC_ID_AMV,
+    .p.audio_codec  = AV_CODEC_ID_ADPCM_IMA_AMV,
+    .p.video_codec  = AV_CODEC_ID_AMV,
     .init           = amv_init,
     .deinit         = amv_deinit,
     .write_header   = amv_write_header,

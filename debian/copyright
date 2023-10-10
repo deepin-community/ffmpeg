@@ -52,7 +52,7 @@ Copyright:
   2001-2006, Daniel Maas <dmaas@dcine.com> <dmaas@maasdigital.com>
   2001-2010, Krzysztof Foltman, Markus Schmidt, Thor Harald Johansen, Damien Zammit, Vladimir Sadovnikov and others
   2001-2018, Michael Niedermayer <michaelni@gmx.at>
-  2001-2019, Peter Ross <pross@xvid.org>
+  2001-2022, Peter Ross <pross@xvid.org>
   2001-2019, The FFmpeg project
   2002, Anders Johansson <ajh@atri.curtin.edu.au>
   2002, Brian Foley
@@ -126,7 +126,7 @@ Copyright:
   2005-2012, VLC authors and VideoLAN
   2005-2013, Diego Biurrun <diego@biurrun.de>
   2005-2015, Luca Barbato <lu_zero@gentoo.org>
-  2005-2016, Reimar Döffinger <Reimar.Doeffinger@gmx.de>
+  2005-2020, Reimar Döffinger <Reimar.Doeffinger@gmx.de>
   2006, Corey Hickey
   2006, Cyril Zorin
   2006, Guillaume Poirier <gpoirier@mplayerhq.hu>
@@ -223,7 +223,7 @@ Copyright:
   2009-2013, Christian Schmidt
   2009-2013, Daniel Verkamp <daniel@drv.nu>
   2009-2015, James Darnley <james.darnley@gmail.com>
-  2009-2016, Thilo Borgmann <thilo.borgmann@mail.de>
+  2009-2022, Thilo Borgmann <thilo.borgmann@mail.de>
   2009-2018, Kostya Shishkov
   2009-2020, Martin Storsjo
   2010, Adrian Daerr
@@ -251,10 +251,10 @@ Copyright:
   2010-2011, Elvis Presley
   2010-2012, Rafaël Carré <funman@videolan.org>
   2010-2013, Georg Martius <georg.martius@web.de>
-  2010-2013, Rémi Denis-Courmont
+  2010-2022, Rémi Denis-Courmont
   2010-2015, Carl Eugen Hoyos
   2010-2015, Janne Grunau <janne-libav@jannau.net>
-  2010-2017, Anton Khirnov <anton@khirnov.net>
+  2010-2022, Anton Khirnov <anton@khirnov.net>
   2010-2017, Google, Inc
   2010-2017, Tomas Härdin
   2010-2018, Philip Langdale <ffmpeg.philipl@overt.org> <philipl@overt.org>
@@ -282,7 +282,7 @@ Copyright:
   2011-2015,2019, Derek Buitenhuis
   2011-2016, Kieran Kunhya <kieran@kunhya.com>
   2011-2018, Clément Bœsch <u@pkh.me> <clement@stupeflix.com>
-  2011-2020, Paul B Mahol
+  2011-2023, Paul B Mahol
   2012, Aleksi Nurmi
   2012, Andrew D'Addesio
   2012, Antti Seppälä
@@ -292,14 +292,15 @@ Copyright:
   2012, Jeremy Tran
   2012, Krzysztof Klinikowski
   2012, Laurent de Soras
+  2012, Mans Rullgard
   2012, Pavel Koshevoy <pkoshevoy@gmail.com>
   2012, Petri Hintukainen <phintuka@users.sourceforge.net>
   2012, Robert Nagy <ronag89@gmail.com>
   2012, Samuel Pitoiset
   2012, Sebastien Zwickert
   2012, Steven Robertson
-  2012, Youness Alaoui <kakaroto@kakaroto.homelinux.net>
   2012, Vitaliy E Sugrobov
+  2012, Youness Alaoui <kakaroto@kakaroto.homelinux.net>
   2012-2013, Andrey Utkin <andrey.krieger.utkin@gmail.com>
   2012-2013, Aneesh Dogra (lionaneesh) <lionaneesh@gmail.com>
   2012-2013, Fredrik Mellbin
@@ -311,8 +312,8 @@ Copyright:
   2012-2013, Wassim Hamidouche
   2012-2014, Georg Lippitsch <georg.lippitsch@gmx.at>
   2012-2015, Christophe Gisquet <christophe.gisquet@gmail.com>
-  2012-2019, James Almer <jamrial@gmail.com>
-  2012-2019, Jan Ekström
+  2012-2022, James Almer <jamrial@gmail.com>
+  2012-2023, Jan Ekström
   2013, Anand Meher Kotra
   2013, Ash Hughes
   2013, Darryl Wallace <wallacdj@gmail.com>
@@ -395,10 +396,11 @@ Copyright:
   2015-2016, Zhou Xiaoyong <zhouxiaoyong@loongson.cn>
   2015-2017, Manojkumar Bhosale <Manojkumar.Bhosale@imgtec.com>
   2015-2017, Matthieu Bouron <matthieu.bouron@stupeflix.com>
-  2015-2017, Rostislav Pehlivanov <atomnuker@gmail.com>
+  2015-2018, Rostislav Pehlivanov <atomnuker@gmail.com>
   2015-2018, Henrik Gramner <henrik@gramner.com>
-  2015-2019, Loongson Technology Corporation Limited
-  2015-2019, Rodger Combs <rodger.combs@gmail.com>
+  2015-2022, Loongson Technology Corporation Limited
+  2015-2021, Facebook, Inc.
+  2015-2021, Rodger Combs <rodger.combs@gmail.com>
   2016, Davinder Singh (DSM_) <ds.mudhar<@gmail.com>
   2016, Floris Sluiter
   2016, Jan Sebechlebsky
@@ -432,7 +434,6 @@ Copyright:
   2018, Mina Sami
   2018, Misty De Meo
   2018, Mohammad Izadi <moh.izadi at gmail.com>
-  2018, Rostislav Pehlivanov <atomnuker@gmail.com>
   2018, Sergey Lavrushkin
   2018, Yingming Fan <yingmingfan@gmail.com>
   2018, Yiqun Xu <yiqun.xu@vipl.ict.ac.cn>
@@ -449,10 +450,18 @@ Copyright:
   2020, Alyssa Milburn <amilburn@zall.org>
   2020, David Bryant
   2020, Gautam Ramakrishnan
+  2020, Björn Ottosoon
   2020, Jun Zhao <barryjzhao@tencent.com>
   2020, Vacing Fang <vacingfang@tencent.com>
   2020, Yaroslav Pogrebnyak <yyyaroslav@gmail.com>
-  2020, Zane van Iperen (zane@zanevaniperen.com)
+  2020, Zane van Iperen <zane@zanevaniperen.com>
+  2020-2022, J. Dekker
+  2021, Wu Jianhua <jianhua.wu@intel.com>
+  2022, Clément Bœsch
+  2022, Mohamed Khaled
+  2022, Niklas Haas
+  2022, Zhao Zhili
+  2023, Leo Izen
 License: LGPL-2.1+
 Comment:
  The copyright details for Joseph Artsimovich and UAB "DKD" were extracted
@@ -660,29 +669,20 @@ Comment:
  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 Files:
-  compat/cuda/ptx2c.sh
   doc/bootstrap.min.css
-  doc/examples/avio_list_dir.c
-  doc/examples/avio_reading.c
-  doc/examples/decode_audio.c
-  doc/examples/decode_video.c
-  doc/examples/demuxing_decoding.c
-  doc/examples/encode_audio.c
-  doc/examples/encode_video.c
+  doc/examples/avio_*.c
+  doc/examples/decode_*.c
+  doc/examples/demux_decode.c
+  doc/examples/encode_*.c
   doc/examples/extract_mvs.c
-  doc/examples/filtering_audio.c
-  doc/examples/filtering_video.c
-  doc/examples/http_multiclient.c
   doc/examples/hw_decode.c
-  doc/examples/metadata.c
-  doc/examples/muxing.c
-  doc/examples/qsvdec.c
-  doc/examples/remuxing.c
-  doc/examples/resampling_audio.c
-  doc/examples/scaling_video.c
-  doc/examples/transcoding.c
-  doc/examples/vaapi_encode.c
-  doc/examples/vaapi_transcode.c
+  doc/examples/mux.c
+  doc/examples/qsv_*.c
+  doc/examples/remux.c
+  doc/examples/resample_audio.c
+  doc/examples/scale_video.c
+  doc/examples/transcode.c
+  doc/examples/vaapi_*.c
   doc/style.min.css
   libavcodec/arm/jrevdct_arm.S
   libavcodec/cinepakenc.c
@@ -698,9 +698,11 @@ Files:
   libavfilter/vf_avgblur.c
   libavfilter/vf_bilateral.c
   libavfilter/vf_bm3d.c
+  libavfilter/vf_colorspace_cuda.c
+  libavfilter/vf_colorspace_cuda.cu
   libavfilter/vf_deband.c
-  libavfilter/vf_scale_cuda.c
-  libavfilter/vf_scale_cuda.cu
+  libavfilter/vf_morpho.c
+  libavfilter/vf_scale_cuda.*
   libavfilter/vf_thumbnail_cuda.c
   libavfilter/vf_thumbnail_cuda.cu
   libavformat/oggdec.c
@@ -731,7 +733,7 @@ Copyright:
   2009, Benjamin Dobell
   2009, Glass Echidna
   2010, Nicolas George
-  2010-2017, NVIDIA Corporation
+  2010-2022, NVIDIA Corporation
   2011, Tomas Härdin
   2011-2014, Reinhard Tartler
   2011-2014, Stefano Sabatini <stefano.sabatini-lala@poste.it> <stefasab@gmail.com>
@@ -748,8 +750,9 @@ Copyright:
   2015, Niklas Haas
   2015, Stephan Holljes
   2015, Vittorio Giovara <vittorio.giovara@gmail.com>
-  2015-2019, Paul B Mahol
+  2015-2021, Paul B Mahol
   2015-2016, mawen1250
+  2016, ReneBrals
   2017, Ming Yang
   2018, Chris Johnson
 License: Expat
@@ -891,7 +894,10 @@ License: IJG
  of commercial products, provided that all warranty or liability claims are
  assumed by the product vendor.
 
-Files: libavcodec/j2kenc.c
+Files:
+  libavcodec/j2kenc.c
+  libavformat/imf*
+  libavformat/tests/imf*
 Copyright:
   2001-2003, David Janssens
   2002-2003, Yannick Verschueren
@@ -901,6 +907,7 @@ Copyright:
   2005, Herve Drolon, FreeImage Team
   2007, Callum Lerwick <seg@haxxed.com>
   2007, Kamil Nowosad
+  Sandflow Consulting LLC
 License: LGPL-2.1+ and BSD-2-clause
 
 Files: libavutil/adler32.c
@@ -924,8 +931,18 @@ License: Zlib
 
 Files:
   libavfilter/af_hdcd.c
+  libavcodec/speexdata.h
+  libavcodec/speexdec.c
 Copyright:
   2010, Chris Moeller
+  2002-2008, Xiph.org Foundation
+  2002-2008, Jean-Marc Valin
+  2005-2007, Analog Devices Inc.
+  2005-2008, Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+  1993,2002,2006, David Rowe
+  2003, EpicGames
+  1992-1994, Jutta Degener
+  1992-1994, Carsten Bormann
 License: BSD-3-clause
 
 Files:
@@ -1004,7 +1021,7 @@ License: LGPL-2.1+ and BSL
 Files: debian/*
 Copyright:
   2014-2017, Andreas Cadhalpun <Andreas.Cadhalpun@googlemail.com>
-  2016, Sebastian Ramacher <sramacher@debian.org>
+  2016-2023, Sebastian Ramacher <sramacher@debian.org>
   2017-2018, James Cowgill <jcowgill@debian.org>
   2020, Jonas Smedegaard <dr@jones.dk>
 License: LGPL-2.1+

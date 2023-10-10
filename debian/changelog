@@ -1,15 +1,189 @@
-ffmpeg (7:4.4.2-1deepin1) unstable; urgency=medium
+ffmpeg (7:6.0-5) unstable; urgency=medium
 
-  * import a patch from upstream to fix sdl2 check
+  * debian/patches: Apply upstream patches for libplacebo 6.292 (Closes:
+    #1042812)
 
- -- Chang Yang <yangchang@deepin.org>  Thu, 28 Sep 2023 15:42:23 +0800
+ -- Sebastian Ramacher <sramacher@debian.org>  Tue, 01 Aug 2023 13:32:04 +0200
 
-ffmpeg (7:4.4.2-1) unstable; urgency=medium
+ffmpeg (7:6.0-4) unstable; urgency=medium
 
-  * New upstream version 4.4.2
-  * debian/rules: Disable sndio
+  * Upload to unstable
+  * debian/tests: No longer test svq1 codec with matroska.
+  * debian/patches: Fix build of examples
 
- -- Sebastian Ramacher <sramacher@debian.org>  Mon, 18 Apr 2022 21:42:58 +0200
+ -- Sebastian Ramacher <sramacher@debian.org>  Thu, 27 Jul 2023 08:58:41 +0200
+
+ffmpeg (7:6.0-3) experimental; urgency=medium
+
+  * debian/tests: No longer test deprecated ayuv codec
+  * debian/patches: Fix build with binutils 2.41
+  * debian/: Remove handling of kfreebsd
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Mon, 17 Jul 2023 22:22:59 +0200
+
+ffmpeg (7:6.0-2) experimental; urgency=medium
+
+  * debian/: Produce tight dependencies only for internal use of avpriv
+    symbols (Closes: #1034315)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Thu, 13 Apr 2023 23:24:21 +0200
+
+ffmpeg (7:6.0-1) experimental; urgency=medium
+
+  * New upstream version 6.0
+  * SONAME bumps
+    - libavcodec59 -> libavcodec60
+    - libavdevice59 -> libavdevice60
+    - libavfilter8 -> libavfilter9
+    - libavformat59 -> libavformat60
+    - libavutil57 -> libavutil58
+    - libpostproc56 -> libpostproc57
+    - libswscale6 -> libswscale7
+  * debian/patches: Remove patches included upstream
+  * debian/gbp.conf: Work in debian/experimental
+  * debian/: Build with oneVPL support (Closes: #1023718)
+  * debian/control: Remove lbgl1-mesa-dev from Build-Depends
+  * debian/copyright:
+    - Update copyright years
+    - Update file paths
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 05 Mar 2023 15:47:45 +0100
+
+ffmpeg (7:5.1.2-3) unstable; urgency=medium
+
+  * debian/rules: Disable more tests on ppc64 (Closes: #1022764)
+  * debian/patches: Add upstream patch to fix FTBFS after vulkan changes
+    (Closes: #1031447)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Fri, 17 Feb 2023 08:26:22 +0100
+
+ffmpeg (7:5.1.2-2) unstable; urgency=medium
+
+  [ Mathieu Malaterre ]
+  * d/control: Add support for JPEG-XL. (Closes: #1023646)
+
+  [ Diederik de Haas ]
+  * ci: Enable Salsa's CI
+
+  [ Sebastian Ramacher ]
+  * debian/control: Bump Standards-Version
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 22 Jan 2023 13:07:50 +0100
+
+ffmpeg (7:5.1.2-1) unstable; urgency=medium
+
+  * New upstream version 5.1.2
+  * debian/rules: Fix typo (Closes: #1020273)
+  * debian/patches: Remove all patches, all integrated upstream
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sat, 01 Oct 2022 09:57:28 +0200
+
+ffmpeg (7:5.1.1-2) unstable; urgency=medium
+
+  * debian/rules: Disable filter-overlay_yuv420p10 on all BE architectures
+    (Closes: #1019133)
+  * debian/: Enable librav1e support
+  * debian/patches: Apply upstream patch to limit automatic number of threads
+    to 16
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Fri, 16 Sep 2022 23:50:22 +0200
+
+ffmpeg (7:5.1.1-1) unstable; urgency=medium
+
+  * New upstream version 5.1.1
+  * debian/patches: Remove upstream patches
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sat, 03 Sep 2022 09:46:14 +0200
+
+ffmpeg (7:5.1-3) unstable; urgency=medium
+
+  * debian/: Build with vulkan and libplacebo only on Linux (Closes: #1017108)
+  * debian/patches: Add upstream patch to disable default ipfs gateway
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Wed, 24 Aug 2022 23:33:44 +0200
+
+ffmpeg (7:5.1-2) unstable; urgency=medium
+
+  * debian/: Fix test failures on s390x (Closes: #1016519)
+    * Apply upstream fixes for some s390x test failures
+    * Disable one new failing test
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Tue, 02 Aug 2022 20:27:24 +0200
+
+ffmpeg (7:5.1-1) unstable; urgency=medium
+
+  * New upstream version 5.1
+  * debian/control: Remove libxvmc-dev; decoder mpeg_xvmc was removed
+  * debian/patches: Apply some upstream patches from the release/5.1 branch
+  * debian/ffmpeg-doc.install: Fix installation of documentation
+  * debian/*.symbols: Add new symbols
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 31 Jul 2022 20:07:37 +0200
+
+ffmpeg (7:5.0.1-3) unstable; urgency=medium
+
+  * debian/tests: Update encoders for autopkgtests
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Thu, 23 Jun 2022 11:29:43 +0200
+
+ffmpeg (7:5.0.1-2) unstable; urgency=medium
+
+  * Upload to unstable
+  * debian/control: Bump Standards-Version
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Wed, 22 Jun 2022 22:08:33 +0200
+
+ffmpeg (7:5.0.1-1) experimental; urgency=medium
+
+  * New upstream version 5.0.1
+  * debian/:
+    - Revert "Build without svt-av1 support on i386 for now"
+    - Disable sndio
+    - Build with librist (Closes: #1008172)
+  * debian/patches: Remove patches from upstream
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Wed, 06 Apr 2022 11:28:57 +0200
+
+ffmpeg (7:5.0-3) experimental; urgency=medium
+
+  * debian/rules: Ignore two test failures on ppc64el
+  * debian/:
+    - Build with --enable-libplacebo
+    - Build without svt-av1 support on i386 for now
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Thu, 17 Feb 2022 22:00:15 +0100
+
+ffmpeg (7:5.0-2) experimental; urgency=medium
+
+  * debian/rules: Remove --disable-msa2
+  * debian/: Apply upstream patch to link with libatomic
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sat, 22 Jan 2022 13:10:28 +0100
+
+ffmpeg (7:5.0-1) experimental; urgency=medium
+
+  * New upstream version 5.0
+  * SONAME bumps
+    - libavcodec58 -> libavcodec59
+    - libavdevice58 -> libavdevice59
+    - libavfilter7 -> libavfilter8
+    - libavformat58 -> libavformat59
+    - libavutil56 -> libavutil57
+    - libpostproc55 -> libpostproc56
+    - libswresample3 -> libswresample4
+    - libswscale5 -> libswscale6
+  * debian/patches:
+    - Remove patches included upstream
+    - Add upstream patch to fix tests
+  * debian/control:
+    - Add libvulkan-dev to BD
+    - Fix architecture name of m68k
+  * debian/rules:
+    - Build with --enable-libglslang
+    - Build with --enable-libsvtav1
+  * debian/copyright: Update for 5.0
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 16 Jan 2022 20:51:12 +0100
 
 ffmpeg (7:4.4.1-3) unstable; urgency=medium
 

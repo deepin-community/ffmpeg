@@ -3,6 +3,16 @@ fate-avpacket: libavcodec/tests/avpacket$(EXESUF)
 fate-avpacket: CMD = run libavcodec/tests/avpacket$(EXESUF)
 fate-avpacket: CMP = null
 
+FATE_LIBAVCODEC-yes += fate-bitstream-be
+fate-bitstream-be: libavcodec/tests/bitstream_be$(EXESUF)
+fate-bitstream-be: CMD = run libavcodec/tests/bitstream_be$(EXESUF)
+fate-bitstream-be: CMP = null
+
+FATE_LIBAVCODEC-yes += fate-bitstream-le
+fate-bitstream-le: libavcodec/tests/bitstream_le$(EXESUF)
+fate-bitstream-le: CMD = run libavcodec/tests/bitstream_le$(EXESUF)
+fate-bitstream-le: CMP = null
+
 FATE_LIBAVCODEC-$(CONFIG_CABAC) += fate-cabac
 fate-cabac: libavcodec/tests/cabac$(EXESUF)
 fate-cabac: CMD = run libavcodec/tests/cabac$(EXESUF)
@@ -79,10 +89,10 @@ FATE_LIBAVCODEC-$(CONFIG_JPEG2000_ENCODER) += fate-j2k-dwt
 fate-j2k-dwt: libavcodec/tests/jpeg2000dwt$(EXESUF)
 fate-j2k-dwt: CMD = run libavcodec/tests/jpeg2000dwt$(EXESUF)
 
-FATE_LIBAVCODEC-yes += fate-libavcodec-utils
-fate-libavcodec-utils: libavcodec/tests/utils$(EXESUF)
-fate-libavcodec-utils: CMD = run libavcodec/tests/utils$(EXESUF)
-fate-libavcodec-utils: CMP = null
+FATE_LIBAVCODEC-yes += fate-libavcodec-avcodec
+fate-libavcodec-avcodec: libavcodec/tests/avcodec$(EXESUF)
+fate-libavcodec-avcodec: CMD = run libavcodec/tests/avcodec$(EXESUF)
+fate-libavcodec-avcodec: CMP = null
 
 FATE_LIBAVCODEC-yes += fate-libavcodec-huffman
 fate-libavcodec-huffman: libavcodec/tests/mjpegenc_huffman$(EXESUF)
