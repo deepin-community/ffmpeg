@@ -1,3 +1,9 @@
+ffmpeg (7:6.0-5deepin1) unstable; urgency=medium
+
+  * fix error parsing /build/ffmpeg-git/doc/t2h.pm
+
+ -- bluesky <chenchongbiao@deepin.org>  Thu, 25 Jan 2024 10:26:58 +0800
+
 ffmpeg (7:6.0-5) unstable; urgency=medium
 
   * debian/patches: Apply upstream patches for libplacebo 6.292 (Closes:
