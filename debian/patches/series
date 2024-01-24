@@ -2,3 +2,4 @@
 0002-examples-fix-build-of-mux-and-resample_audio.patch
 0003-avfilter-vf_libplacebo-wrap-deprecated-opts-in-FF_AP.patch
 0004-avfilter-vf_libplacebo-remove-deprecated-field.patch
+0005-Patch-up-t2h-for-texinfo-7.1.patch
