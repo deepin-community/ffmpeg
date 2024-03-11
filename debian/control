@@ -75,6 +75,8 @@ Build-Depends:
  libgnutls28-dev,
 # --enable-libgsm
  libgsm1-dev,
+# --enable-libharfbuzz
+ libharfbuzz-dev,
 # Fails to be detected by configure script, if not also libavc1394-dev is installed.
 # --enable-libiec61883
  libiec61883-dev [linux-any],
@@ -108,13 +110,13 @@ Build-Depends:
 # --enable-libplacebo
  libplacebo-dev (>= 4.192) [linux-any] <!pkg.ffmpeg.stage1>,
 # --enable-pocketsphinx
- libpocketsphinx-dev (>= 0.8+5prealpha+1-7~) [!alpha !hppa !ia64 !m68k !mipsel !mips64el !powerpc !ppc64 !s390x !sparc64],
+ libpocketsphinx-dev (>= 0.8+5prealpha+1-7~) [!alpha !hppa !ia64 !m68k !mips64el !powerpc !ppc64 !s390x !sparc64],
 # --enable-libpulse
  libpulse-dev,
 # --enable-librabbitmq
  librabbitmq-dev,
 # --enable-librav1e
- librav1e-dev [!alpha !hppa !hurd-i386 !ia64 !m68k !riscv64 !sh4 !sparc64 !x32] <!pkg.ffmpeg.stage1>,
+ librav1e-dev [!alpha !hppa !hurd-i386 !ia64 !m68k !sh4 !sparc64 !x32] <!pkg.ffmpeg.stage1>,
 # --enable-librist
  librist-dev,
 # --enable-librubberband
@@ -140,7 +142,7 @@ Build-Depends:
 # --enable-libssh
  libssh-gcrypt-dev,
 # --enable-libsvtav1
- libsvtav1enc-dev,
+ libsvtav1enc-dev <!pkg.ffmpeg.stage1>,
 # --enable-libtesseract (used only in -extra flavor)
  libtesseract-dev,
 # --enable-libtheora
@@ -193,12 +195,11 @@ Build-Depends:
 # --enable-opencl
  ocl-icd-opencl-dev | opencl-dev,
 # used to detect libraries
- pkg-config,
+ pkgconf,
 # HTML documentation
  texinfo,
 # assembler optimizations
  nasm,
- pkg-kde-tools,
 # autodetected zlib
  zlib1g-dev
 

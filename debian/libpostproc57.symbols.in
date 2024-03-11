@@ -1,4 +1,3 @@
-# SymbolsHelper-Confirmed: 7:6.0 amd64
 libpostproc.so.57 libpostproc57 #MINVER#
 * Build-Depends-Package: libpostproc-dev
  LIBPOSTPROC_57@LIBPOSTPROC_57 @DEB_VERSION_EPOCH_UPSTREAM@

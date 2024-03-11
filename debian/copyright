@@ -762,12 +762,8 @@ Files:
   libavcodec/aacsbr_fixed.c
   libavcodec/ac3dec_fixed.c
   libavcodec/arm/vp8dsp_armv6.S
-  libavcodec/fft_fixed_32.c
-  libavcodec/fft_init_table.c
-  libavcodec/fft_table.h
   libavcodec/ilbcdata.h
   libavcodec/ilbcdec.c
-  libavcodec/mdct_fixed_32.c
   libavcodec/mips/aaccoder_mips.c
   libavcodec/mips/aacdec_mips.c
   libavcodec/mips/aacdec_mips.h
@@ -784,7 +780,6 @@ Files:
   libavcodec/mips/celp_math_mips.c
   libavcodec/mips/compute_antialias_fixed.h
   libavcodec/mips/compute_antialias_float.h
-  libavcodec/mips/fft_mips.c
   libavcodec/mips/fmtconvert_mips.c
   libavcodec/mips/iirfilter_mips.c
   libavcodec/mips/lsp_mips.h

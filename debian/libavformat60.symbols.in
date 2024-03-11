@@ -1,4 +1,3 @@
-# SymbolsHelper-Confirmed: 7:6.0 amd64
 libavformat.so.60 libavformat60 #MINVER#
 | libavformat60 (= @DEB_VERSION@)
 * Build-Depends-Package: libavformat-dev

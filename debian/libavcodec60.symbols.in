@@ -1,4 +1,3 @@
-# SymbolsHelper-Confirmed: 7:6.0 amd64
 libavcodec.so.60 libavcodec60 #MINVER#
 | libavcodec60 (= @DEB_VERSION@)
 * Build-Depends-Package: libavcodec-dev
@@ -49,9 +48,14 @@ libavcodec.so.60 libavcodec60 #MINVER#
  av_get_pcm_codec@LIBAVCODEC_60 7:6.0
  av_get_profile_name@LIBAVCODEC_60 7:6.0
  av_grow_packet@LIBAVCODEC_60 7:6.0
+ av_imdct_calc@LIBAVCODEC_60 7:6.1
+ av_imdct_half@LIBAVCODEC_60 7:6.1
  av_init_packet@LIBAVCODEC_60 7:6.0
  av_jni_get_java_vm@LIBAVCODEC_60 7:6.0
  av_jni_set_java_vm@LIBAVCODEC_60 7:6.0
+ av_mdct_calc@LIBAVCODEC_60 7:6.1
+ av_mdct_end@LIBAVCODEC_60 7:6.1
+ av_mdct_init@LIBAVCODEC_60 7:6.1
  av_mediacodec_alloc_context@LIBAVCODEC_60 7:6.0
  av_mediacodec_default_free@LIBAVCODEC_60 7:6.0
  av_mediacodec_default_init@LIBAVCODEC_60 7:6.0
@@ -74,7 +78,12 @@ libavcodec.so.60 libavcodec60 #MINVER#
  av_packet_ref@LIBAVCODEC_60 7:6.0
  av_packet_rescale_ts@LIBAVCODEC_60 7:6.0
  av_packet_shrink_side_data@LIBAVCODEC_60 7:6.0
+ av_packet_side_data_add@LIBAVCODEC_60 7:6.1
+ av_packet_side_data_free@LIBAVCODEC_60 7:6.1
+ av_packet_side_data_get@LIBAVCODEC_60 7:6.1
  av_packet_side_data_name@LIBAVCODEC_60 7:6.0
+ av_packet_side_data_new@LIBAVCODEC_60 7:6.1
+ av_packet_side_data_remove@LIBAVCODEC_60 7:6.1
  av_packet_unpack_dictionary@LIBAVCODEC_60 7:6.0
  av_packet_unref@LIBAVCODEC_60 7:6.0
  av_parser_close@LIBAVCODEC_60 7:6.0

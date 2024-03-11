@@ -1,4 +1,3 @@
-# SymbolsHelper-Confirmed: 7:6.0 amd64
 libavdevice.so.60 libavdevice60 #MINVER#
 * Build-Depends-Package: libavdevice-dev
  LIBAVDEVICE_60@LIBAVDEVICE_60 @DEB_VERSION_EPOCH_UPSTREAM@
