@@ -1,8 +1,85 @@
-ffmpeg (7:6.0-5deepin1) unstable; urgency=medium
+ffmpeg (7:6.1.1-2) unstable; urgency=medium
 
-  * fix error parsing /build/ffmpeg-git/doc/t2h.pm
+  * debian/patches: Fix compilation with glslang 14 (Closes: #1064740)
 
- -- bluesky <chenchongbiao@deepin.org>  Thu, 25 Jan 2024 10:26:58 +0800
+ -- Sebastian Ramacher <sramacher@debian.org>  Wed, 28 Feb 2024 23:26:37 +0100
+
+ffmpeg (7:6.1.1-1) unstable; urgency=medium
+
+  * New upstream version 6.1.1
+  * debian/control: Use pkgconf
+  * debian/patches: Remove patches included upstream
+  * debian/copyright: Remove unused file patterns
+  * debian/*.lintian-overrides: Update due renamed tags
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 31 Dec 2023 10:42:58 +0100
+
+ffmpeg (7:6.1-5) unstable; urgency=medium
+
+  [ - ]
+  * debian/: Build with harfbuzz (Closes: #1056597)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sat, 02 Dec 2023 12:59:43 +0100
+
+ffmpeg (7:6.1-4) unstable; urgency=medium
+
+  * debian/patches: Apply new upstream patch
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Tue, 21 Nov 2023 20:52:36 +0100
+
+ffmpeg (7:6.1-3) unstable; urgency=medium
+
+  * debian/patches: Fix crash in vlc hardware decoder (Closes: #1055952,
+    #1056058, #1056149)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 19 Nov 2023 10:48:05 +0100
+
+ffmpeg (7:6.1-2) unstable; urgency=medium
+
+  * debian/patches: Fix segfault when freeing FFT instances
+  * debian/tests:
+    - Fix parsing of encoders and decoders
+    - Fix file name for hls tests
+    - Disable streamcopy test of matroska/gif
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 12 Nov 2023 15:38:18 +0100
+
+ffmpeg (7:6.1-1) unstable; urgency=medium
+
+  * New upstream version 6.1
+  * debian/patches: Remove patches included upstream
+  * debian/: Remove use of pkgkde_symbolshelper
+  * debian/*.symbols: Add new symbols
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sat, 11 Nov 2023 13:02:47 +0100
+
+ffmpeg (7:6.0-9) unstable; urgency=medium
+
+  * debian/patches: Workaround build issues with texinfo 7.1 (Closes:
+    #1055111)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Wed, 01 Nov 2023 00:06:10 +0100
+
+ffmpeg (7:6.0-8) unstable; urgency=medium
+
+  * debian/: Re-enable libsvtav1 (Closes: #1055058)
+  * debian/rules: Remove mips(el)
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Mon, 30 Oct 2023 21:55:47 +0100
+
+ffmpeg (7:6.0-7) unstable; urgency=medium
+
+  * debian/: Disable libsvtav1 to unblock transition
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 24 Sep 2023 08:47:33 +0200
+
+ffmpeg (7:6.0-6) unstable; urgency=medium
+
+  * debian/libavutils58.symbols: Fix version for avpriv symbols
+  * debian/: Enable rav1e on riscv64
+  * debian/rules: Build static libraries with PIC enabled
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Wed, 23 Aug 2023 10:24:18 +0200
 
 ffmpeg (7:6.0-5) unstable; urgency=medium
 

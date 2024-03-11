@@ -27,6 +27,9 @@ encode_file() {
     codec=${enc%%:*}
     encoder=${enc##*:}
     file_name="$dir/$encoder.$mux"
+    if [ "$mux" == "hls" ]; then
+        file_name="$file_name.m3u8"
+    fi
     opts=
     # some codecs require extra options
     if [ "$codec" == "avui" ]; then
@@ -137,6 +140,9 @@ streamcopy_file() {
     test=$2
     mux=${test%%;*}
     file_name_copy="$file_name.copy.$mux"
+    if [ "$mux" == "hls" ]; then
+        file_name_copy="$file_name_copy.m3u8"
+    fi
     ret=0
     # The option '-t 1' is necessary, because the comfortnoise decoder never stops producing noise.
     CMD="ffmpeg -threads $THREADS -strict -2 -i $file_name -t 1 -c copy -f $mux $file_name_copy -y -hide_banner -nostdin"
@@ -178,7 +184,7 @@ list_codecs() {
             echo "${type,,}=$codec"
         else
             # de/encoder(s) name(s) differ from codec name
-            items=$(echo "$items" | sed "s/.*($what: \([^)]*\) ).*/\1/")
+            items=$(echo "$items" | sed "s/.*($what: \([^)]*\)).*/\1/")
             IFS=" "
             for item in $items; do
                 echo "${type,,}=$codec:$item"

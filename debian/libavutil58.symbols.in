@@ -1,9 +1,8 @@
-# SymbolsHelper-Confirmed: 7:6.0 amd64
 libavutil.so.58 libavutil58 #MINVER#
 | libavutil58 (= @DEB_VERSION@)
 * Build-Depends-Package: libavutil-dev
  LIBAVUTIL_58@LIBAVUTIL_58 @DEB_VERSION_EPOCH_UPSTREAM@
- (optional|regex)^avpriv_ 0
+ (optional|regex)^avpriv_ 0 1
  av_add_i@LIBAVUTIL_58 7:6.0
  av_add_q@LIBAVUTIL_58 7:6.0
  av_add_stable@LIBAVUTIL_58 7:6.0
@@ -40,6 +39,7 @@ libavutil.so.58 libavutil58 #MINVER#
  av_base64_decode@LIBAVUTIL_58 7:6.0
  av_base64_encode@LIBAVUTIL_58 7:6.0
  av_basename@LIBAVUTIL_58 7:6.0
+ av_bessel_i0@LIBAVUTIL_58 7:6.1
  av_blowfish_alloc@LIBAVUTIL_58 7:6.0
  av_blowfish_crypt@LIBAVUTIL_58 7:6.0
  av_blowfish_crypt_ecb@LIBAVUTIL_58 7:6.0
@@ -161,6 +161,8 @@ libavutil.so.58 libavutil58 #MINVER#
  av_downmix_info_update_side_data@LIBAVUTIL_58 7:6.0
  av_dynamic_hdr_plus_alloc@LIBAVUTIL_58 7:6.0
  av_dynamic_hdr_plus_create_side_data@LIBAVUTIL_58 7:6.0
+ av_dynamic_hdr_plus_from_t35@LIBAVUTIL_58 7:6.1
+ av_dynamic_hdr_plus_to_t35@LIBAVUTIL_58 7:6.1
  av_dynamic_hdr_vivid_alloc@LIBAVUTIL_58 7:6.0
  av_dynamic_hdr_vivid_create_side_data@LIBAVUTIL_58 7:6.0
  av_dynarray2_add@LIBAVUTIL_58 7:6.0
@@ -176,6 +178,9 @@ libavutil.so.58 libavutil58 #MINVER#
  av_encryption_init_info_free@LIBAVUTIL_58 7:6.0
  av_encryption_init_info_get_side_data@LIBAVUTIL_58 7:6.0
  av_escape@LIBAVUTIL_58 7:6.0
+ av_executor_alloc@LIBAVUTIL_58 7:6.1
+ av_executor_execute@LIBAVUTIL_58 7:6.1
+ av_executor_free@LIBAVUTIL_58 7:6.1
  av_expr_count_func@LIBAVUTIL_58 7:6.0
  av_expr_count_vars@LIBAVUTIL_58 7:6.0
  av_expr_eval@LIBAVUTIL_58 7:6.0
@@ -240,6 +245,7 @@ libavutil.so.58 libavutil58 #MINVER#
  av_frame_new_side_data_from_buf@LIBAVUTIL_58 7:6.0
  av_frame_ref@LIBAVUTIL_58 7:6.0
  av_frame_remove_side_data@LIBAVUTIL_58 7:6.0
+ av_frame_replace@LIBAVUTIL_58 7:6.1
  av_frame_side_data_name@LIBAVUTIL_58 7:6.0
  av_frame_unref@LIBAVUTIL_58 7:6.0
  av_free@LIBAVUTIL_58 7:6.0
@@ -439,6 +445,7 @@ libavutil.so.58 libavutil58 #MINVER#
  av_pix_fmt_swap_endianness@LIBAVUTIL_58 7:6.0
  av_pixelutils_get_sad_fn@LIBAVUTIL_58 7:6.0
  av_q2intfloat@LIBAVUTIL_58 7:6.0
+ av_random_bytes@LIBAVUTIL_58 7:6.1
  av_rc4_alloc@LIBAVUTIL_58 7:6.0
  av_rc4_crypt@LIBAVUTIL_58 7:6.0
  av_rc4_init@LIBAVUTIL_58 7:6.0
@@ -556,6 +563,8 @@ libavutil.so.58 libavutil58 #MINVER#
  av_version_info@LIBAVUTIL_58 7:6.0
  av_video_enc_params_alloc@LIBAVUTIL_58 7:6.0
  av_video_enc_params_create_side_data@LIBAVUTIL_58 7:6.0
+ av_video_hint_alloc@LIBAVUTIL_58 7:6.1
+ av_video_hint_create_side_data@LIBAVUTIL_58 7:6.1
  av_vk_frame_alloc@LIBAVUTIL_58 7:6.0
  av_vkfmt_from_pixfmt@LIBAVUTIL_58 7:6.0
  av_vlog@LIBAVUTIL_58 7:6.0

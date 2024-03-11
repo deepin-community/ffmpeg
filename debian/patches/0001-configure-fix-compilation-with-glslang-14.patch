@@ -1,0 +1,34 @@
+From: Lynne <dev@lynne.ee>
+Date: Wed, 31 Jan 2024 17:28:56 +0100
+Subject: configure: fix compilation with glslang 14
+
+The configure check already had fallback for the previous version
+of glslang, which had different requirements for flags.
+This commit simply moves the flags needed for glslang 13 to the
+fallback, while first trying to use new flags for glslang 14.
+
+This drops support for ~3 year old glslang versions, which
+I'm not sure had the complete C API we're using anyway.
+---
+ configure | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure b/configure
+index a89cfa6..ca011c1 100755
+--- a/configure
++++ b/configure
+@@ -6705,11 +6705,11 @@ enabled libfreetype       && require_pkg_config libfreetype freetype2 "ft2build.
+ enabled libfribidi        && require_pkg_config libfribidi fribidi fribidi.h fribidi_version_info
+ enabled libharfbuzz       && require_pkg_config libharfbuzz harfbuzz hb.h hb_buffer_create
+ enabled libglslang && { check_lib spirv_compiler glslang/Include/glslang_c_interface.h glslang_initialize_process \
+-                            -lglslang -lMachineIndependent -lOSDependent -lHLSL -lOGLCompiler -lGenericCodeGen \
++                            -lglslang -lMachineIndependent -lGenericCodeGen \
+                             -lSPVRemapper -lSPIRV -lSPIRV-Tools-opt -lSPIRV-Tools -lpthread -lstdc++ -lm ||
+                         require spirv_compiler glslang/Include/glslang_c_interface.h glslang_initialize_process \
+-                            -lglslang -lOSDependent -lHLSL -lOGLCompiler \
+-                            -lSPVRemapper -lSPIRV -lSPIRV-Tools-opt -lSPIRV-Tools -lpthread -lstdc++ -lm; }
++                            -lglslang -lMachineIndependent -lOSDependent -lHLSL -lOGLCompiler -lGenericCodeGen \
++                            -lSPVRemapper -lSPIRV -lSPIRV-Tools-opt -lSPIRV-Tools -lpthread -lstdc++ -lm ; }
+ enabled libgme            && { check_pkg_config libgme libgme gme/gme.h gme_new_emu ||
+                                require libgme gme/gme.h gme_new_emu -lgme -lstdc++; }
+ enabled libgsm            && { for gsm_hdr in "gsm.h" "gsm/gsm.h"; do
