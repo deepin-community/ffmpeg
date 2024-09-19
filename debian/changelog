@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.1-2deepin0) unstable; urgency=medium
+
+  * No source change upload against GCC 12.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Thu, 19 Sep 2024 22:47:03 +0800
+
 ffmpeg (7:6.1.1-2) unstable; urgency=medium
 
   * debian/patches: Fix compilation with glslang 14 (Closes: #1064740)
