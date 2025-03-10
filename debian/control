@@ -201,7 +201,11 @@ Build-Depends:
 # assembler optimizations
  nasm,
 # autodetected zlib
- zlib1g-dev
+ zlib1g-dev,
+# --enable-libdavs2
+ libdavs2-dev,
+# --enable-libxavs2
+ libxavs2-dev
 
 Package: ffmpeg
 Architecture: any
