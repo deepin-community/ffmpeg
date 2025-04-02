@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.1-2deepin3) unstable; urgency=medium
+
+  * Add libmbedtls-dev build dependency for sw64
+
+ -- renbin <renbin@uniontech.com>  Thu, 03 Apr 2025 09:26:59 +0800
+
 ffmpeg (7:6.1.1-2deepin2) unstable; urgency=medium
 
   * Added AVS format support.
