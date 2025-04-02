@@ -205,7 +205,9 @@ Build-Depends:
 # --enable-libdavs2
  libdavs2-dev,
 # --enable-libxavs2
- libxavs2-dev
+ libxavs2-dev,
+# required on sw64
+ libmbedtls-dev [sw64]
 
 Package: ffmpeg
 Architecture: any
