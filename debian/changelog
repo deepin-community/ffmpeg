@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.1-2deepin4) unstable; urgency=medium
+
+  * add support for eswin media codec
+
+ -- Chang Yang <yangchang@deepin.org>  Thu, 24 Apr 2025 09:59:48 +0800
+
 ffmpeg (7:6.1.1-2deepin3) unstable; urgency=medium
 
   * Add libmbedtls-dev build dependency for sw64
