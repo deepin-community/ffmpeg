@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.1-2deepin5) unstable; urgency=medium
+
+  * Build with libssh's default flavor
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Sun, 29 Jun 2025 15:07:25 +0800
+
 ffmpeg (7:6.1.1-2deepin4) unstable; urgency=medium
 
   *  update version for rebuild.
