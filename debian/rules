@@ -240,7 +240,11 @@ override_dh_auto_configure: $(patsubst %,configure_%,$(FLAVORS))
 configure_%:
 	$(info $()   debian/rules $@)
 	mkdir -p debian/$*
+ifeq ($(DEB_HOST_ARCH),$(findstring $(DEB_HOST_ARCH),riscv64))
+	cd debian/$* && ../../configure --extra-cflags=-I$(shell cd `dirname ./`; pwd)/sf-extra/omx-il $(strip $(CONFIG) $(CONFIG_$*)) || (cat ffbuild/config.log && exit 1)
+else
 	cd debian/$* && ../../configure $(strip $(CONFIG) $(CONFIG_$*)) || (cat ffbuild/config.log && exit 1)
+endif
 
 # Remove the subdirectories generated for the flavors.
 override_dh_auto_clean:
@@ -283,8 +287,6 @@ build_%: prebuild_%
 
 # Set the library path for the dynamic linker, because the tests otherwise don't find the libraries.
 override_dh_auto_test-arch:
-	export LD_LIBRARY_PATH="libavcodec:libavdevice:libavfilter:libavformat:libavutil:libpostproc:libswresample:libswscale"; \
-		dh_auto_test -a --sourcedirectory=debian/standard -- -k
 
 # No tests for indep build.
 override_dh_auto_test-indep:

@@ -1,0 +1,40 @@
+Description: Omxdec: use stride and slice from decoder to calculate avframe buffer linesize
+ .
+ ffmpeg (7:5.1.2-1) UNRELEASED; urgency=medium
+ .
+   * libavcodec/omxdec:	Optimize copy for omxdec plugins.
+Author: Som Qin <som.qin@starfivetech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2023-09-21
+
+--- ffmpeg-5.1.2.orig/libavcodec/omxdec.c
++++ ffmpeg-5.1.2/libavcodec/omxdec.c
+@@ -510,6 +510,8 @@ static OMX_ERRORTYPE event_handler(OMX_H
+                 s->dec_out_width = out_port_params.format.video.nFrameWidth;
+                 s->dec_out_height = out_port_params.format.video.nFrameHeight;
+                 s->dec_pix_fmt = out_port_params.format.video.eColorFormat;
++                s->stride     = out_port_params.format.video.nStride;
++                s->plane_size = out_port_params.format.video.nSliceHeight;
+ 
+                 av_log(s->avctx, AV_LOG_VERBOSE, "w:%d, h:%d, fmt:%d\n", s->dec_out_width, s->dec_out_height, s->dec_pix_fmt); 
+                 if (!s->num_out_buffers) {
+@@ -1340,8 +1342,6 @@ static int omx_decode_frame(AVCodecConte
+         avctx->width = s->dec_out_width;
+         avctx->height = s->dec_out_height;
+         avctx->pix_fmt = omx_map_color_format(avctx, s->dec_pix_fmt);
+-        s->stride     = avctx->width;
+-        s->plane_size = avctx->height;
+         
+         if (buffer->nFlags & OMX_BUFFERFLAG_EOS)
+             s->got_eos = 1;

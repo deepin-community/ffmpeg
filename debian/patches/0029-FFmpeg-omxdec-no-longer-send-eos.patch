@@ -1,0 +1,66 @@
+Description: omxdec no longer send eos when processing zero size pkt
+ In the actual use case, we often encounter situation that pkt size is 0 but stream
+ not end up, eg some video website player.
+ .
+ ffmpeg (7:5.1.2-1.1) UNRELEASED; urgency=medium
+ .
+   * libavcodec/omxdec:	Optimize copy for omxdec plugins.
+Author: Som Qin <som.qin@starfivetech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2023-06-25
+
+--- ffmpeg-5.1.2.orig/libavcodec/omxdec.c
++++ ffmpeg-5.1.2/libavcodec/omxdec.c
+@@ -1269,29 +1269,6 @@ static int omx_decode_frame(AVCodecConte
+             av_log(avctx, AV_LOG_ERROR, "OMX_EmptyThisBuffer failed: %x\n", err);
+             return AVERROR_UNKNOWN;
+         }
+-    } else if (!s->eos_sent) {
+-
+-        // if(!s->first_get_outbuffer)
+-        // av_usleep(1000000);
+-        buffer = get_buffer(&s->input_mutex, &s->input_cond,
+-                            &s->num_free_in_buffers, s->free_in_buffers, 1);
+-
+-        if(!buffer) {
+-            av_log(avctx, AV_LOG_ERROR, "get_buffer NULL\n");
+-            return AVERROR(ENOMEM);
+-        }
+-
+-        buffer->nFilledLen = 0;
+-        buffer->nFlags = OMX_BUFFERFLAG_EOS;
+-        buffer->pAppPrivate = buffer->pOutputPortPrivate = NULL;
+-        
+-        err = OMX_EmptyThisBuffer(s->handle, buffer);
+-        if (err != OMX_ErrorNone) {
+-            append_buffer(&s->input_mutex, &s->input_cond, &s->num_free_in_buffers, s->free_in_buffers, buffer);
+-            av_log(avctx, AV_LOG_ERROR, "OMX_EmptyThisBuffer failed: %x\n", err);
+-            return AVERROR_UNKNOWN;
+-        }
+-        s->eos_sent = 1;
+     }
+ 
+     while (!*got_packet && ret == 0 && !s->got_eos) {
+@@ -1303,10 +1280,7 @@ static int omx_decode_frame(AVCodecConte
+                             !pkt || had_partial);
+ 
+         if (!buffer) {
+-            /*eos is sent wait for vpu evnet_bufferflag to get all frames
+-              mjpeg: sent a frame, then wait for a decoder frame 
+-            */
+-            if((s->eos_sent && !s->evnet_bufferflag) || (avctx->codec_id == AV_CODEC_ID_MJPEG )) {
++            if( avctx->codec_id == AV_CODEC_ID_MJPEG ) {
+                 continue; 
+             }
+             break;

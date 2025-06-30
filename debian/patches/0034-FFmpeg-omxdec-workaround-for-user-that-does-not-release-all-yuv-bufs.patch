@@ -1,0 +1,93 @@
+Description: Omxdec: Workaround for user that does not release all output buffers
+ .
+ ffmpeg (7:5.1.2-1) UNRELEASED; urgency=medium
+ .
+   * libavcodec/omxdec:	Optimize copy for omxdec plugins.
+Author: Som Qin <som.qin@starfivetech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2023-11-17
+
+--- ffmpeg-5.1.2.orig/libavcodec/omxdec.c
++++ ffmpeg-5.1.2/libavcodec/omxdec.c
+@@ -986,7 +986,7 @@ static av_cold int omx_component_init(AV
+ 
+ static av_cold void cleanup(OMXCodecContext *s)
+ {
+-    int i, executing;
++    int i, n,executing;
+     OMX_BUFFERHEADERTYPE *buffer;
+ 
+     pthread_mutex_lock(&s->state_mutex);
+@@ -1004,14 +1004,18 @@ static av_cold void cleanup(OMXCodecCont
+             OMX_FreeBuffer(s->handle, s->in_port, buffer);
+         }
+ 
+-        while (buffer = get_output_buffer(s, 0)) {
+-            OMX_FreeBuffer(s->handle, s->out_port, buffer);
+-            s->num_out_buffers--;
++        n = s->num_out_buffers;
++
++        while (buffer = get_output_buffer(s, 5)) {
++            n--;
++        }
++
++        for (i = 0; i < s->num_out_buffers; i++) {
++            OMX_FreeBuffer(s->handle, s->out_port, s->out_buffer_headers[i]);
+         }
+ 
+-        if (s->num_out_buffers) {
++        if (n > 0) {
+             s->has_cleanup = 1;
+-            return;
+         }
+ 
+         wait_for_state(s, OMX_StateLoaded);
+@@ -1161,37 +1165,6 @@ static void omx_free_out_buffer(void *op
+             append_buffer(&s->output_mutex, &s->output_cond, &s->num_done_out_buffers, s->done_out_buffers, buffer);
+             av_log(s->avctx, AV_LOG_ERROR, "OMX_FillThisBuffer failed, err: %x\n", err);
+         }
+-    } else {
+-        OMX_FreeBuffer(s->handle, s->out_port, buffer);
+-        s->num_out_buffers--;
+-        if (!s->num_out_buffers) {
+-            wait_for_state(s, OMX_StateLoaded);
+-            if (s->handle) {
+-                s->omx_context->ptr_FreeHandle(s->handle);
+-                s->handle = NULL;
+-            }
+-
+-            omx_deinit(s->omx_context);
+-            s->omx_context = NULL;
+-            if (s->mutex_cond_inited) {
+-                pthread_cond_destroy(&s->state_cond);
+-                pthread_mutex_destroy(&s->state_mutex);
+-                pthread_cond_destroy(&s->input_cond);
+-                pthread_mutex_destroy(&s->input_mutex);
+-                pthread_cond_destroy(&s->output_cond);
+-                pthread_mutex_destroy(&s->output_mutex);
+-                pthread_cond_destroy(&s->disableEVnt_cond);
+-                pthread_mutex_destroy(&s->disableEVnt_mutex);
+-                s->mutex_cond_inited = 0;
+-            }
+-            OMXDecodeQueueDestory(&s->decode_pts_queue);
+-            av_freep(&s->decode_pts_queue);
+-            av_freep(&s->in_buffer_headers);
+-            av_freep(&s->out_buffer_headers);
+-            av_freep(&s->free_in_buffers);
+-            av_freep(&s->done_out_buffers);
+-            av_freep(&s->output_buf);
+-        }
+     }
+ }
+ 

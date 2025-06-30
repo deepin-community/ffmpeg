@@ -1,0 +1,154 @@
+Description: Omxdec: optimize buffer method for mjpg decoder
+
+Author: Som Qin <som.qin@starfivetech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2023-07-17
+
+--- ffmpeg-5.1.2.orig/libavcodec/omxdec.c
++++ ffmpeg-5.1.2/libavcodec/omxdec.c
+@@ -438,7 +438,8 @@ static OMX_ERRORTYPE event_handler(OMX_H
+         if (data1 == OMX_CommandStateSet) {
+             pthread_mutex_lock(&s->state_mutex);
+             s->state = data2;
+-            av_log(s->avctx, AV_LOG_VERBOSE, "OMX state changed to %"PRIu32"\n", (uint32_t) data2);
++            if (!s->has_cleanup)
++                av_log(s->avctx, AV_LOG_VERBOSE, "OMX state changed to %"PRIu32"\n", (uint32_t) data2);
+             pthread_cond_broadcast(&s->state_cond);
+             pthread_mutex_unlock(&s->state_mutex);
+         } else if (data1 == OMX_CommandPortDisable) {
+@@ -1181,11 +1182,14 @@ static int omx_buf_to_swframe(OMXCodecCo
+     switch (s->avctx->pix_fmt) {
+     case AV_PIX_FMT_NV12:
+     case AV_PIX_FMT_NV21:
++    case AV_PIX_FMT_NV16:
+         frame->linesize[1] = linesize[1];
+         frame->data[1] = dst[1];
+         break;
+ 
+     case AV_PIX_FMT_YUV420P:
++    case AV_PIX_FMT_YUV422P:
++    case AV_PIX_FMT_YUV444P:
+         frame->linesize[1] = linesize[1];
+         frame->linesize[2] = linesize[2];
+         frame->data[1] = dst[1];
+@@ -1280,9 +1284,6 @@ static int omx_decode_frame(AVCodecConte
+                             !pkt || had_partial);
+ 
+         if (!buffer) {
+-            if( avctx->codec_id == AV_CODEC_ID_MJPEG ) {
+-                continue; 
+-            }
+             break;
+         }
+ 
+@@ -1309,66 +1310,33 @@ static int omx_decode_frame(AVCodecConte
+         if (buffer->nFlags & OMX_BUFFERFLAG_EOS)
+             s->got_eos = 1;
+ 
+-        if (avctx->codec->id == AV_CODEC_ID_HEVC ||
+-                avctx->codec->id == AV_CODEC_ID_H264) {
+-            avframe->width  = avctx->width;
+-            avframe->height = avctx->height;
+-
+-            ret = ff_decode_frame_props(avctx, avframe);
+-            if(ret < 0) {
+-                av_log(avctx, AV_LOG_ERROR, "Unable to fill buffer props\n");
+-                goto end;
+-            }
+-
+-            ret = omx_buf_to_swframe(s, avframe, buffer);
+-            if(ret < 0) {
+-                av_log(avctx, AV_LOG_ERROR, "Unable to alloce frame\n");
+-                goto end;
+-            }
+-
+-            if (pkt->pts) {
+-                if (OMXDecodeQueueEmpty(&s->decode_pts_queue) != 0){
+-                    av_log(avctx, AV_LOG_ERROR, "The queue of decode pts is empty.\n");
+-                    return AVERROR_INVALIDDATA;
+-                }
+-                avframe->pts = OMXDecodeQueueFront(&s->decode_pts_queue);
+-                OMXDecodeQueuePop(&s->decode_pts_queue);
+-            }
+-            s->decode_flag += 1;
+-            *got_packet = 1;
+-
+-            return ret;
++        avframe->width  = avctx->width;
++        avframe->height = avctx->height;
+ 
+-        } else if (avctx->codec->id == AV_CODEC_ID_MPEG4 ||
+-        avctx->codec->id == AV_CODEC_ID_MJPEG) {
+-
+-            uint8_t *dst[4];
+-            int linesize[4];
+-			if ((ret = ff_get_buffer(avctx, avframe, 0)) < 0) {
+-                av_log(avctx, AV_LOG_ERROR, "Unable to allocate buffer\n");
+-                goto end;
+-            }
++        ret = ff_decode_frame_props(avctx, avframe);
++        if(ret < 0) {
++            av_log(avctx, AV_LOG_ERROR, "Unable to fill buffer props\n");
++            goto end;
++        }
+ 
+-            ret = av_image_fill_arrays(dst, linesize, buffer->pBuffer,
+-                                   avctx->pix_fmt, s->stride, s->plane_size, 1);
+-            if (ret < 0){
+-                av_log(avctx, AV_LOG_ERROR, "av_image_fill_arrays ret:%d\n", ret);
+-                goto end;
+-            }
++        ret = omx_buf_to_swframe(s, avframe, buffer);
++        if(ret < 0) {
++            av_log(avctx, AV_LOG_ERROR, "Unable to alloce frame\n");
++            goto end;
++        }
+ 
+-            av_image_copy(avframe->data, avframe->linesize, (const uint8_t**)dst, linesize, 
+-                                avctx->pix_fmt, avctx->width, avctx->height);
+-            if (pkt->pts) {
+-                if (OMXDecodeQueueEmpty(&s->decode_pts_queue) != 0){
+-                    av_log(avctx, AV_LOG_ERROR, "The queue of decode pts is empty.\n");
+-                    return AVERROR_INVALIDDATA;
+-                }
+-                avframe->pts = OMXDecodeQueueFront(&s->decode_pts_queue);
+-                OMXDecodeQueuePop(&s->decode_pts_queue);
++        if (pkt->pts) {
++            if (OMXDecodeQueueEmpty(&s->decode_pts_queue) != 0){
++                av_log(avctx, AV_LOG_ERROR, "The queue of decode pts is empty.\n");
++                return AVERROR_INVALIDDATA;
+             }
+-            s->decode_flag += 1;
+-            *got_packet = 1;
++            avframe->pts = OMXDecodeQueueFront(&s->decode_pts_queue);
++            OMXDecodeQueuePop(&s->decode_pts_queue);
+         }
++        s->decode_flag += 1;
++        *got_packet = 1;
++
++        return ret;
+ 
+ end:     
+         err = OMX_FillThisBuffer(s->handle, buffer);
+@@ -1524,8 +1492,9 @@ FFCodec ff_mjpeg_omx_decoder = {
+     FF_CODEC_DECODE_CB(omx_decode_frame),
+     .close            = omx_decode_end,
+     .flush            = omx_decode_flush,
+-    .p.capabilities     = AV_CODEC_CAP_DR1,
++    .p.capabilities     = AV_CODEC_CAP_DELAY,
+     .p.max_lowres       = 3,
+     .caps_internal    = FF_CODEC_CAP_INIT_CLEANUP,
+     .p.priv_class       = &omx_mjpegdec_class,
+ };
++

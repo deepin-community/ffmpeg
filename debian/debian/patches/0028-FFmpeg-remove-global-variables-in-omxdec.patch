@@ -1,0 +1,91 @@
+Description: Remove the global variables in omxdec, it make issue in mutithread.
+ .
+ ffmpeg (7:5.1.2-1.1) UNRELEASED; urgency=medium
+ .
+   * libavcodec/omxdec:	Optimize copy for omxdec plugins.
+Author: Som Qin <som.qin@starfivetech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2023-06-15
+
+--- ffmpeg-5.1.2.orig/libavcodec/omxdec.c
++++ ffmpeg-5.1.2/libavcodec/omxdec.c
+@@ -48,10 +48,7 @@
+ #include "internal.h"
+ #include "profiles.h"
+ #include "codec_internal.h"
+-int evnet_bufferflag;
+-int dec_out_height;
+-int dec_out_width;
+-int dec_pix_fmt;
++
+ 
+ #ifdef OMX_SKIP64BIT
+ static OMX_TICKS to_omx_ticks(int64_t value)
+@@ -354,6 +351,9 @@ typedef struct OMXCodecContext {
+     int mutex_cond_inited;
+ 
+     int eos_sent, got_eos, evnet_bufferflag, first_get_outbuffer;
++    int dec_out_height;
++    int dec_out_width;
++    int dec_pix_fmt;
+ 
+     int extradata_sent;
+     int has_cleanup;
+@@ -475,11 +475,11 @@ static OMX_ERRORTYPE event_handler(OMX_H
+             }
+             if (port_params.eDir == OMX_DirOutput) {
+                 out_port_params = port_params;
+-                dec_out_width = out_port_params.format.video.nFrameWidth;
+-                dec_out_height = out_port_params.format.video.nFrameHeight;
+-                dec_pix_fmt = out_port_params.format.video.eColorFormat;
++                s->dec_out_width = out_port_params.format.video.nFrameWidth;
++                s->dec_out_height = out_port_params.format.video.nFrameHeight;
++                s->dec_pix_fmt = out_port_params.format.video.eColorFormat;
+ 
+-                av_log(s->avctx, AV_LOG_VERBOSE, "w:%d, h:%d, fmt:%d\n", dec_out_width, dec_out_height, dec_pix_fmt); 
++                av_log(s->avctx, AV_LOG_VERBOSE, "w:%d, h:%d, fmt:%d\n", s->dec_out_width, s->dec_out_height, s->dec_pix_fmt); 
+                 if (!s->num_out_buffers) {
+                     s->num_out_buffers = out_port_params.nBufferCountActual;
+                     s->out_buffer_headers = av_mallocz(sizeof(OMX_BUFFERHEADERTYPE*) * s->num_out_buffers);
+@@ -511,7 +511,7 @@ static OMX_ERRORTYPE event_handler(OMX_H
+         break;
+     case OMX_EventBufferFlag:
+         av_log(s->avctx, AV_LOG_VERBOSE, "OMX decoder competd set event_bufferflag\n");
+-        evnet_bufferflag = 1;
++        s->evnet_bufferflag = 1;
+     default:
+         av_log(s->avctx, AV_LOG_VERBOSE, "OMX event %d %"PRIx32" %"PRIx32"\n",
+                                          event, (uint32_t) data1, (uint32_t) data2);
+@@ -1306,7 +1306,7 @@ static int omx_decode_frame(AVCodecConte
+             /*eos is sent wait for vpu evnet_bufferflag to get all frames
+               mjpeg: sent a frame, then wait for a decoder frame 
+             */
+-            if((s->eos_sent && !evnet_bufferflag) || (avctx->codec_id == AV_CODEC_ID_MJPEG )) {
++            if((s->eos_sent && !s->evnet_bufferflag) || (avctx->codec_id == AV_CODEC_ID_MJPEG )) {
+                 continue; 
+             }
+             break;
+@@ -1326,9 +1326,9 @@ static int omx_decode_frame(AVCodecConte
+             goto end;
+         }
+ 
+-        avctx->width = dec_out_width;
+-        avctx->height = dec_out_height;
+-        avctx->pix_fmt = omx_map_color_format(avctx, dec_pix_fmt);
++        avctx->width = s->dec_out_width;
++        avctx->height = s->dec_out_height;
++        avctx->pix_fmt = omx_map_color_format(avctx, s->dec_pix_fmt);
+         s->stride     = avctx->width;
+         s->plane_size = avctx->height;
+         

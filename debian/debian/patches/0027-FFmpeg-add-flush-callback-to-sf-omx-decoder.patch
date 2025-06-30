@@ -1,0 +1,99 @@
+Description: Add flush callback of sf omx decoder
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ ffmpeg (7:5.1.2-1.1) UNRELEASED; urgency=medium
+ .
+   * libavcodec/omxdec:	Add flush callback of sf omx decoder.
+Author: Som Qin <som.qin@starfivetech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout https://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: (upstream|backport|vendor|other), (<patch-url>|commit:<commit-id>)
+Bug: <upstream-bugtracker-url>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: (no|not-needed|<patch-forwarded-url>)
+Applied-Upstream: <version>, (<commit-url>|commit:<commid-id>)
+Reviewed-By: <name and email of someone who approved/reviewed the patch>
+Last-Update: 2023-05-29
+
+--- ffmpeg-5.1.2.orig/libavcodec/omxdec.c
++++ ffmpeg-5.1.2/libavcodec/omxdec.c
+@@ -365,6 +365,7 @@ typedef struct OMXCodecContext {
+     OMX_U32 scale_height;
+     OMX_U32 rotation;
+     OMX_U32 mirror;
++    OMX_U32 skip;
+     char *crop_expr;
+     struct {
+         int x;
+@@ -1310,6 +1311,11 @@ static int omx_decode_frame(AVCodecConte
+             }
+             break;
+         }
++
++        if(s->skip) {
++            s->skip--;
++            goto end;
++        }
+         //if (!buffer)
+            // break;
+         // if(!s->first_get_outbuffer)
+@@ -1401,6 +1407,18 @@ end:
+     return ret;
+ }
+ 
++static void omx_decode_flush(AVCodecContext *avctx)
++{
++    OMXCodecContext *s = avctx->priv_data;
++
++    av_log(avctx, AV_LOG_VERBOSE, "Flushing buffer\n");
++
++    while(!OMXDecodeQueueEmpty(&s->decode_pts_queue)) {
++        OMXDecodeQueuePop(&s->decode_pts_queue);
++        s->skip++;
++    }
++}
++
+ static av_cold int omx_decode_end(AVCodecContext *avctx)
+ {
+     OMXCodecContext *s = avctx->priv_data;
+@@ -1465,6 +1483,7 @@ FFCodec ff_mpeg4_omx_decoder = {
+     .init             = omx_decode_init,
+     FF_CODEC_ENCODE_CB(omx_decode_frame),
+     .close            = omx_decode_end,
++    .flush            = omx_decode_flush,
+     .p.capabilities     = AV_CODEC_CAP_DELAY,
+     .caps_internal    = FF_CODEC_CAP_INIT_CLEANUP,
+     .p.priv_class       = &omx_mpeg4dec_class,
+@@ -1485,6 +1504,7 @@ FFCodec ff_h264_omx_decoder = {
+     .init             = omx_decode_init,
+     FF_CODEC_DECODE_CB(omx_decode_frame),
+     .close            = omx_decode_end,
++    .flush            = omx_decode_flush,
+     .p.capabilities     = AV_CODEC_CAP_DELAY,
+     .caps_internal    = FF_CODEC_CAP_INIT_CLEANUP,
+     .p.priv_class       = &omx_h264dec_class,
+@@ -1506,6 +1526,7 @@ FFCodec ff_hevc_omx_decoder = {
+     .init             = omx_decode_init,
+     FF_CODEC_DECODE_CB(omx_decode_frame),
+     .close            = omx_decode_end,
++    .flush            = omx_decode_flush,
+     .p.profiles         = NULL_IF_CONFIG_SMALL(ff_hevc_profiles),
+     .p.capabilities     = AV_CODEC_CAP_DELAY,
+     .caps_internal    = FF_CODEC_CAP_INIT_CLEANUP,
+@@ -1528,6 +1549,7 @@ FFCodec ff_mjpeg_omx_decoder = {
+     .init             = omx_decode_init,
+     FF_CODEC_DECODE_CB(omx_decode_frame),
+     .close            = omx_decode_end,
++    .flush            = omx_decode_flush,
+     .p.capabilities     = AV_CODEC_CAP_DR1,
+     .p.max_lowres       = 3,
+     .caps_internal    = FF_CODEC_CAP_INIT_CLEANUP,
