@@ -1,1 +1,4 @@
 0001-configure-fix-compilation-with-glslang-14.patch
+
+# spacemit K1 video codec support
+0002-spacemit-k1.patch

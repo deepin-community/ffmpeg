@@ -206,6 +206,8 @@ Build-Depends:
  libdavs2-dev,
 # --enable-libxavs2
  libxavs2-dev,
+# --enable-stcodec
+ mpp [riscv64],
 # required on sw64
  libmbedtls-dev [sw64]
 

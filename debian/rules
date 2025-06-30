@@ -91,6 +91,12 @@ ifneq (alpha,$(DEB_HOST_ARCH))
 	CONFIG += --enable-libjxl
 endif
 
+# use spacemit_mpp on riscv64 for now
+ifeq (riscv64,$(DEB_HOST_ARCH))
+        CONFIG += --extra-libs=-lspacemit_mpp \
+                --enable-stcodec
+endif
+
 # avoid pocketsphinx on mips (bug#812335), alpha, ia64 and big-endian (bug#968456)
 ifeq (,$(filter mips% alpha ia64,$(DEB_HOST_ARCH))$(filter big,$(DEB_HOST_ARCH_ENDIAN)))
 	CONFIG += --enable-pocketsphinx
