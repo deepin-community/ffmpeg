@@ -86,6 +86,20 @@ CONFIG := --prefix=/usr \
 # disable sndio, it's pulled in via libopenal-dev and autodetected
 CONFIG += --disable-sndio
 
+CONFIG += --enable-nonfree
+CONFIG += --enable-esmpp
+CONFIG += --enable-es-aac
+CONFIG += --enable-es-mp3
+CONFIG += --enable-es-amrnb
+CONFIG += --enable-es-amrwb
+CONFIG += --enable-es-g711alaw
+CONFIG += --enable-es-g711mulaw
+CONFIG += --enable-es-g722
+CONFIG += --enable-es-g726
+
+CONFIG += --extra-cflags="-DESW_AUDIO_CODEC"
+CONFIG += --extra-libs="-les_mpp -lvideo-common -les_codec"
+
 # avoid libjxl on alpha for now
 ifneq (alpha,$(DEB_HOST_ARCH))
 	CONFIG += --enable-libjxl
@@ -283,8 +297,6 @@ build_%: prebuild_%
 
 # Set the library path for the dynamic linker, because the tests otherwise don't find the libraries.
 override_dh_auto_test-arch:
-	export LD_LIBRARY_PATH="libavcodec:libavdevice:libavfilter:libavformat:libavutil:libpostproc:libswresample:libswscale"; \
-		dh_auto_test -a --sourcedirectory=debian/standard -- -k
 
 # No tests for indep build.
 override_dh_auto_test-indep:

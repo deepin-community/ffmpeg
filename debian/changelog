@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.1-2deepin6) unstable; urgency=medium
+
+  * feat: add support for eswin media codec
+
+ -- Chang Yang <yangchang@deepin.org>  Mon, 30 Jun 2025 17:55:25 +0800
+
 ffmpeg (7:6.1.1-2deepin5) unstable; urgency=medium
 
   * Build with libssh's default flavor
