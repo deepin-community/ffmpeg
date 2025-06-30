@@ -1,1 +1,3 @@
 0001-configure-fix-compilation-with-glslang-14.patch
+0002-add-support-for-p1-omx.patch
+0003-disable-omx-jpeg-decoder.patch

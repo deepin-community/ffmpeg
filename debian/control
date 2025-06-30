@@ -206,6 +206,7 @@ Build-Depends:
  libdavs2-dev,
 # --enable-libxavs2
  libxavs2-dev,
+ th1520-vpu [riscv64],
 # required on sw64
  libmbedtls-dev [sw64]
 
@@ -253,7 +254,8 @@ Section: libs
 Multi-Arch: same
 Depends:
  ${shlibs:Depends},
- ${misc:Depends}
+ ${misc:Depends},
+ th1520-vpu
 Suggests:
  libcuda1 [amd64 arm64 i386],
  libnvcuvid1 [amd64 arm64 i386],
@@ -282,7 +284,8 @@ Conflicts: libavcodec60
 Provides: libavcodec60 (= ${binary:Version})
 Depends:
  ${shlibs:Depends},
- ${misc:Depends}
+ ${misc:Depends},
+ th1520-vpu
 Suggests:
  libcuda1 [amd64 arm64 i386],
  libnvcuvid1 [amd64 arm64 i386],
