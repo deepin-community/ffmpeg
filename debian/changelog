@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.1-2deepin5.1) unstable; urgency=medium
+
+  * add rkmpp support
+
+ -- Chang Yang <yangchang@deepin.org>  Thu, 30 Oct 2025 14:03:11 +0800
+
 ffmpeg (7:6.1.1-2deepin5) unstable; urgency=medium
 
   * Build with libssh's default flavor

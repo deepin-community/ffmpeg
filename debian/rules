@@ -81,7 +81,8 @@ CONFIG := --prefix=/usr \
 	--enable-opengl \
 	--enable-sdl2 \
 	--enable-libdavs2 \
-	--enable-libxavs2
+	--enable-libxavs2 \
+	--enable-rkmpp --enable-rkrga --enable-version3
 
 # disable sndio, it's pulled in via libopenal-dev and autodetected
 CONFIG += --disable-sndio
