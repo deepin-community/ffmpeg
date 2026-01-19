@@ -1,3 +1,11 @@
+ffmpeg (7:6.1.1-2deepin7) unstable; urgency=medium
+
+  * chore: Update version to 7:6.1.1-2deepin7
+  * fix: [566e903] {swscale,output}: Fix unsigned cast position in yuv2*
+  * fix: [0c6b7f9] {swscale,output}: 	swscale/output: Fix integer overflow in yuv2ya16_X_c_template()
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Mon, 19 Jan 2026 14:31:35 +0800
+
 ffmpeg (7:6.1.1-2deepin6) unstable; urgency=medium
 
   * Apply patch from upstream to fix FTBFS:
