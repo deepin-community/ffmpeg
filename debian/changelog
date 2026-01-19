@@ -1,3 +1,10 @@
+ffmpeg (7:6.1.1-2deepin8) unstable; urgency=medium
+
+  * chore: Update version to 7:6.1.1-2deepin8
+  * fix(avcodec): apply patch for CVE-2025-9951
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Mon, 19 Jan 2026 17:26:38 +0800
+
 ffmpeg (7:6.1.1-2deepin7) unstable; urgency=medium
 
   * chore: Update version to 7:6.1.1-2deepin7
