@@ -17,7 +17,10 @@ export DEB_LDFLAGS_MAINT_STRIP=-Wl,-Bsymbolic-functions
 # Package name for the extra flavor.
 SHLIB_PKGS := $(shell sed -nr '/extra/! s/^Package:[[:space:]]*(lib.*[0-9]+)[[:space:]]*$$/\1/p' debian/control)
 EXTRA_PKGS := $(shell sed -nr 's/^Package:[[:space:]]*(.*extra[0-9]+)[[:space:]]*$$/\1/p' debian/control)
-FLAVORS = standard extra static
+FLAVORS = standard static
+ifeq ($(filter pkg.ffmpeg.noextra,$(DEB_BUILD_PROFILES)),)
+FLAVORS += extra
+endif
 
 # Most possible features, compatible with effective licensing of GPLv2+
 CONFIG := --prefix=/usr \
@@ -28,11 +31,10 @@ CONFIG := --prefix=/usr \
 	--arch=$(DEB_HOST_ARCH_CPU) \
 	--enable-gpl \
 	--disable-stripping \
+	--disable-omx \
 	--enable-gnutls \
-	--enable-ladspa \
 	--enable-libaom \
 	--enable-libass \
-	--enable-libbluray \
 	--enable-libbs2b \
 	--enable-libcaca \
 	--enable-libcdio \
@@ -41,27 +43,21 @@ CONFIG := --prefix=/usr \
 	--enable-libflite \
 	--enable-libfontconfig \
 	--enable-libfreetype \
-	--enable-libharfbuzz \
 	--enable-libfribidi \
 	--enable-libglslang \
 	--enable-libgme \
 	--enable-libgsm \
-	--enable-libjack \
+	--enable-libharfbuzz \
 	--enable-libmp3lame \
 	--enable-libmysofa \
 	--enable-libopenjpeg \
 	--enable-libopenmpt \
 	--enable-libopus \
-	--enable-libpulse \
-	--enable-librabbitmq \
-	--enable-librist \
 	--enable-librubberband \
 	--enable-libshine \
 	--enable-libsnappy \
 	--enable-libsoxr \
 	--enable-libspeex \
-	--enable-libsrt \
-	--enable-libssh \
 	--enable-libtheora \
 	--enable-libtwolame \
 	--enable-libvidstab \
@@ -72,34 +68,12 @@ CONFIG := --prefix=/usr \
 	--enable-libxml2 \
 	--enable-libxvid \
 	--enable-libzimg \
-	--enable-libzmq \
-	--enable-libzvbi \
-	--enable-lv2 \
-	--enable-omx \
 	--enable-openal \
 	--enable-opencl \
-	--enable-opengl \
-	--enable-sdl2 \
-	--enable-libdavs2 \
-	--enable-libxavs2
+	--enable-opengl
 
 # disable sndio, it's pulled in via libopenal-dev and autodetected
 CONFIG += --disable-sndio
-
-# avoid libjxl on alpha for now
-ifneq (alpha,$(DEB_HOST_ARCH))
-	CONFIG += --enable-libjxl
-endif
-
-# avoid pocketsphinx on mips (bug#812335), alpha, ia64 and big-endian (bug#968456)
-ifeq (,$(filter mips% alpha ia64,$(DEB_HOST_ARCH))$(filter big,$(DEB_HOST_ARCH_ENDIAN)))
-	CONFIG += --enable-pocketsphinx
-endif
-
-# avoid librsvg on almost all ports (bug#983344, bug#991556)
-ifeq (,$(filter alpha hppa hurd-i386 ia64 m68k sh4 x32,$(DEB_HOST_ARCH)))
-	CONFIG += --enable-librsvg
-endif
 
 ifeq (amd64,$(DEB_HOST_ARCH))
 	CONFIG += --enable-libvpl \
@@ -148,22 +122,53 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
 endif
 
 # ffmpeg is involved in build-dependency cycles with x264 and chromaprint, so disable them in stage one.
-# Also disable frei0r, which build-depends on opencv.
-# Also disable rav1e for bootstrap to avoid a complete rust toolchain.
+# Also disable
+# - frei0r, which build-depends on opencv.
+# - rav1e and rsvg2 for bootstrap to avoid a complete rust toolchain.
+# - network protocols srt, ssh, zmq, rabbitmq, rist, ...
+# - device access bluray, jack, ...
+# - optional features pocketsphix, zvbi, ladsap, lv2, sdl2, ...
 ifneq (,$(filter pkg.ffmpeg.stage1,$(DEB_BUILD_PROFILES)))
 	CONFIG += \
 		--disable-chromaprint \
 		--disable-frei0r \
+		--disable-ladspa \
+		--disable-libbluray \
+		--disable-libjack \
+		--disable-libjxl \
 		--disable-libplacebo \
+		--disable-libpulse \
+		--disable-librabbitmq \
 		--disable-librav1e \
+		--disable-librist \
+		--disable-librsvg \
+		--disable-libsrt \
+		--disable-libssh \
 		--disable-libsvtav1 \
-		--disable-libx264
+		--disable-libx264 \
+		--disable-libzmq \
+		--disable-libzvbi \
+		--disable-lv2 \
+		--disable-pocketsphinx \
+		--disable-sdl2
 else
 	CONFIG += \
 		--enable-chromaprint \
 		--enable-frei0r \
+		--enable-ladspa \
+		--enable-libbluray \
+		--enable-libjack \
+		--enable-libpulse \
+		--enable-librabbitmq \
+		--enable-librist \
+		--enable-libsrt \
+		--enable-libssh \
 		--enable-libsvtav1 \
-		--enable-libx264
+		--enable-libx264 \
+		--enable-libzmq \
+		--enable-libzvbi \
+		--enable-lv2 \
+		--enable-sdl2
 # Some libraries are built only on linux.
 ifeq (linux,$(DEB_HOST_ARCH_OS))
 	CONFIG += --enable-libplacebo
@@ -175,6 +180,24 @@ ifeq (,$(filter alpha hppa hurd-i386 ia64 m68k sh4 sparc64 x32,$(DEB_HOST_ARCH))
 	CONFIG += --enable-librav1e
 else
 	CONFIG += --disable-librav1e
+endif
+# avoid pocketsphinx on mips (bug#812335), alpha, ia64 and big-endian (bug#968456)
+ifeq (,$(filter mips% alpha ia64,$(DEB_HOST_ARCH))$(filter big,$(DEB_HOST_ARCH_ENDIAN)))
+	CONFIG += --enable-pocketsphinx
+else
+	CONFIG += --disable-pocketsphinx
+endif
+# avoid librsvg on almost all ports (bug#983344, bug#991556)
+ifeq (,$(filter alpha hppa hurd-i386 ia64 m68k sh4 x32,$(DEB_HOST_ARCH)))
+	CONFIG += --enable-librsvg
+else
+	CONFIG += --disable-librsvg
+endif
+# avoid libjxl on alpha for now
+ifneq (alpha,$(DEB_HOST_ARCH))
+	CONFIG += --enable-libjxl
+else
+	CONFIG += --disable-libjxl
 endif
 endif
 
@@ -190,6 +213,13 @@ ifeq (powerpc,$(DEB_HOST_ARCH))
 		--disable-programs
 	CONFIG_altivec-extra = $(CONFIG_altivec) $(CONFIG_extra)
 	FLAVORS += altivec altivec-extra
+endif
+
+# Disable ASM-based optimizations on armel and armhf.
+# They current do not build:
+# * https://trac.ffmpeg.org/ticket/11074
+ifneq (,$(filter armel armhf,$(DEB_HOST_ARCH)))
+	CONFIG += --disable-asm
 endif
 
 # Disable assembly optimizations on x32, because they don't work (yet).
@@ -295,7 +325,9 @@ ifeq (powerpc,$(DEB_HOST_ARCH))
 	install -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 	install -m 644 debian/altivec/*/*.so.* debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 endif
+ifeq ($(filter pkg.ffmpeg.noextra,$(DEB_BUILD_PROFILES)),)
 	dh_auto_install -a --sourcedirectory=debian/extra --destdir=debian/tmp/extra
+endif
 ifeq (powerpc,$(DEB_HOST_ARCH))
 	install -d debian/tmp/extra/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
 	install -m 644 debian/altivec-extra/*/*.so.* debian/tmp/extra/usr/lib/$(DEB_HOST_MULTIARCH)/altivec
@@ -307,17 +339,21 @@ override_dh_auto_install-indep:
 	cd debian/tmp/usr/share/doc/ffmpeg && tree -H '.' -L 1 -P '*.html' --noreport --charset utf-8 -T 'FFmpeg Manual Index' -o index.html
 
 override_dh_install:
+ifeq ($(filter pkg.ffmpeg.noextra,$(DEB_BUILD_PROFILES)),)
 	dh_install $(addprefix -p,$(EXTRA_PKGS)) --sourcedir=debian/tmp/extra
+endif
 	dh_install --remaining-packages
 
 debian/%.symbols: debian/%.symbols.in
 	sed 's/@DEB_VERSION@/${DEB_VERSION}/;s/@DEB_VERSION_EPOCH_UPSTREAM@/${DEB_VERSION_EPOCH_UPSTREAM}/' $< > $@
 
+ifeq ($(filter pkg.ffmpeg.noextra,$(DEB_BUILD_PROFILES)),)
 execute_before_dh_makeshlibs: $(patsubst %,debian/%.symbols,$(SHLIB_PKGS))
 	set -e && for pkg in $(EXTRA_PKGS); do \
 		mainpkg=`echo $$pkg | sed 's/-extra//'`; \
 		cp -f debian/$$mainpkg.symbols debian/$$pkg.symbols; \
 	done
+endif
 
 # avoid error: Unknown DWARF DW_OP_0
 override_dh_dwz:
