@@ -1,3 +1,10 @@
+ffmpeg (7:6.1.1-2deepin9) unstable; urgency=medium
+
+  * chore: Update version to 7:6.1.1-2deepin9
+  * fix(avcodec): apply patch for CVE-2024-36615
+
+ -- Li Chenggang <lichenggang@deepin.org>  Sat, 28 Feb 2026 18:40:00 +0800
+
 ffmpeg (7:6.1.1-2deepin8) unstable; urgency=medium
 
   * chore: Update version to 7:6.1.1-2deepin8
