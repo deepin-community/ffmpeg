@@ -3,3 +3,7 @@
 0003-swscale-output-cve-2025-63757.patch
 0004-avcodec-jpeg2000dec-cve-2025-9951.patch
 0005-avcodec-vp9-cve-2024-36615.patch
+0006-avfilter-cve-2023-50009.patch
+0007-avfilter-cve-2023-49501.patch
+0008-avfilter-cve-2023-49528.patch
+0009-fftools-cve-2024-35365.patch

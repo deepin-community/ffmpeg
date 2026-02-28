@@ -1,3 +1,15 @@
+ffmpeg (7:6.1.1-2deepin10) unstable; urgency=medium
+
+  * chore: Update version to 7:6.1.1-2deepin10
+  * fix(avfilter): apply patch for CVE-2024-36615
+  * fix(avfilter): apply patches for CVE-2023-50009, CVE-2023-49501, CVE-2023-49528
+    - CVE-2023-50009: heap-based buffer overflow in libavfilter/edge_template.c
+    - CVE-2023-49501: buffer overflow in libavfilter/asrc_afirsrc.c
+    - CVE-2023-49528: buffer overflow in libavfilter/af_dialoguenhance.c
+  * fix(fftools): apply patch for CVE-2024-35365
+    - CVE-2024-35365: double-free in fftools/ffmpeg_mux_init.c
+
+ -- 自动 <security@deepin.org>  Sun, 01 Mar 2026 03:54:57 +0800
 ffmpeg (7:6.1.1-2deepin9) unstable; urgency=medium
 
   * chore: Update version to 7:6.1.1-2deepin9
