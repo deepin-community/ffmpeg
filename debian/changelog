@@ -1,7 +1,36 @@
+ffmpeg (7:6.1.1-2deepin9) unstable; urgency=medium
+
+  * Fix multiple security vulnerabilities:
+    - CVE-2023-49501: Heap-based buffer overflow in libavfilter/asrc_afirsrc.c
+    - CVE-2023-49528: Heap-based buffer overflow in libavfilter/af_dialoguenhance.c
+    - CVE-2023-50009: Heap-based buffer overflow in libavfilter/edge_template.c
+    - CVE-2024-35365: Double free in fftools/ffmpeg_mux_init.c
+    - CVE-2024-36615: Race condition in libavcodec/vp9.c
+
+ -- Li Chenggang <lichenggang@deepin.org>  Tue, 03 Mar 2026 19:52:00 +0800
+
 ffmpeg (7:6.1.1-2deepin8) unstable; urgency=medium
 
   * chore: Update version to 7:6.1.1-2deepin8
   * fix(avcodec): apply patch for CVE-2025-9951
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Mon, 19 Jan 2026 17:26:38 +0800
+
+ffmpeg (7:6.1.1-2deepin7) unstable; urgency=medium
+
+  * chore: Update version to 7:6.1.1-2deepin7
+  * fix: [566e903] {swscale,output}: Fix unsigned cast position in yuv2*
+  * fix: [0c6b7f9] {swscale,output}: 	swscale/output: Fix integer overflow in yuv2ya16_X_c_template()
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Mon, 19 Jan 2026 14:31:35 +0800
+
+ffmpeg (7:6.1.1-2deepin6) unstable; urgency=medium
+
+  * Apply patch from upstream to fix FTBFS:
+    - [fef22c8] {avcodec,tests}: rename the bundled Mesa AV1 vulkan
+      video headers
+
+ -- zhanghongyuan <zhanghongyuan@uniontech.com>  Wed, 15 Jan 2026 15:38:07 +0800
 
  -- zhanghongyuan <zhanghongyuan@uniontech.com>  Mon, 19 Jan 2026 17:26:38 +0800
 
