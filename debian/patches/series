@@ -2,3 +2,8 @@
 0002-avcodec-tests-rename-the-bundled-Mesa-AV1-vulkan-vid.patch
 0003-swscale-output-cve-2025-63757.patch
 0004-avcodec-jpeg2000dec-cve-2025-9951.patch
+CVE-2023-49501.patch
+CVE-2023-49528.patch
+CVE-2023-50009.patch
+CVE-2024-35365.patch
+CVE-2024-36615.patch
