@@ -1,3 +1,10 @@
+ffmpeg (7:6.1.1-2deepin9) unstable; urgency=medium
+
+  * security: Fix CVE-2023-49501 CVE-2023-49528 CVE-2024-35365 CVE-2024-
+    36615
+
+ -- lichenggang <lichenggang@deepin.org>  Wed, 04 Mar 2026 15:02:41 +0800
+
 ffmpeg (7:6.1.1-2deepin8) unstable; urgency=medium
 
   * chore: Update version to 7:6.1.1-2deepin8
