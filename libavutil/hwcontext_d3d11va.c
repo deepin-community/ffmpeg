@@ -62,7 +62,9 @@ static av_cold void load_functions(void)
         return;
 
     mD3D11CreateDevice = (PFN_D3D11_CREATE_DEVICE) GetProcAddress(d3dlib, "D3D11CreateDevice");
-    mCreateDXGIFactory = (PFN_CREATE_DXGI_FACTORY) GetProcAddress(dxgilib, "CreateDXGIFactory");
+    mCreateDXGIFactory = (PFN_CREATE_DXGI_FACTORY) GetProcAddress(dxgilib, "CreateDXGIFactory1");
+    if (!mCreateDXGIFactory)
+        mCreateDXGIFactory = (PFN_CREATE_DXGI_FACTORY) GetProcAddress(dxgilib, "CreateDXGIFactory");
 #else
     // In UWP (which lacks LoadLibrary), CreateDXGIFactory isn't available,
     // only CreateDXGIFactory1
@@ -182,6 +184,7 @@ static AVBufferRef *wrap_texture_buf(AVHWFramesContext *ctx, ID3D11Texture2D *te
                                                    sizeof(*frames_hwctx->texture_infos));
         if (!frames_hwctx->texture_infos) {
             ID3D11Texture2D_Release(tex);
+            av_free(desc);
             return NULL;
         }
         s->nb_surfaces = s->nb_surfaces_used + 1;
@@ -194,7 +197,7 @@ static AVBufferRef *wrap_texture_buf(AVHWFramesContext *ctx, ID3D11Texture2D *te
     desc->texture = tex;
     desc->index   = index;
 
-    buf = av_buffer_create((uint8_t *)desc, sizeof(desc), free_texture, tex, 0);
+    buf = av_buffer_create((uint8_t *)desc, sizeof(*desc), free_texture, tex, 0);
     if (!buf) {
         ID3D11Texture2D_Release(tex);
         av_free(desc);

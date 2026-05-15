@@ -1398,7 +1398,7 @@ static int h264_field_start(H264Context *h, const H264SliceContext *sl,
 
     sps = h->ps.sps;
 
-    if (sps && sps->bitstream_restriction_flag &&
+    if (sps->bitstream_restriction_flag &&
         h->avctx->has_b_frames < sps->num_reorder_frames) {
         h->avctx->has_b_frames = sps->num_reorder_frames;
     }
@@ -1933,8 +1933,7 @@ static int h264_slice_init(H264Context *h, H264SliceContext *sl,
 
     if (sl->slice_type_nos == AV_PICTURE_TYPE_B && !sl->direct_spatial_mv_pred)
         ff_h264_direct_dist_scale_factor(h, sl);
-    if (!h->setup_finished)
-        ff_h264_direct_ref_list_init(h, sl);
+    ff_h264_direct_ref_list_init(h, sl);
 
     if (h->avctx->skip_loop_filter >= AVDISCARD_ALL ||
         (h->avctx->skip_loop_filter >= AVDISCARD_NONKEY &&
@@ -1962,6 +1961,12 @@ static int h264_slice_init(H264Context *h, H264SliceContext *sl,
                           h->ps.pps->chroma_qp_index_offset[0],
                           h->ps.pps->chroma_qp_index_offset[1]) +
                    6 * (h->ps.sps->bit_depth_luma - 8);
+
+    // slice_table is uint16_t initialized to 0xFFFF as a sentinel.
+    if (h->current_slice >= 0xFFFE) {
+        av_log(h->avctx, AV_LOG_ERROR, "Too many slices (%d)\n", h->current_slice + 1);
+        return AVERROR_PATCHWELCOME;
+    }
 
     sl->slice_num       = ++h->current_slice;
 

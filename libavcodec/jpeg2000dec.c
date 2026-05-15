@@ -261,6 +261,25 @@ static int get_siz(Jpeg2000DecoderContext *s)
         return AVERROR_INVALIDDATA;
     }
 
+    for (i = 0; i < s->ncomponents; i++) {
+        if (s->cdef[i] < 0) {
+            for (i = 0; i < s->ncomponents; i++) {
+                s->cdef[i] = i + 1;
+            }
+            if ((s->ncomponents & 1) == 0)
+                s->cdef[s->ncomponents-1] = 0;
+        }
+    }
+    // after here we no longer have to consider negative cdef
+
+    int cdef_used = 0;
+    for (i = 0; i < s->ncomponents; i++)
+        cdef_used |= 1<<s->cdef[i];
+
+    // Check that the channels we have are what we expect for the number of components
+    if (cdef_used != ((int[]){0,2,3,14,15})[s->ncomponents])
+        return AVERROR_INVALIDDATA;
+
     for (i = 0; i < s->ncomponents; i++) { // Ssiz_i XRsiz_i, YRsiz_i
         uint8_t x    = bytestream2_get_byteu(&s->g);
         s->cbps[i]   = (x & 0x7f) + 1;
@@ -273,7 +292,9 @@ static int get_siz(Jpeg2000DecoderContext *s)
             av_log(s->avctx, AV_LOG_ERROR, "Invalid sample separation %d/%d\n", s->cdx[i], s->cdy[i]);
             return AVERROR_INVALIDDATA;
         }
-        log2_chroma_wh |= s->cdy[i] >> 1 << i * 4 | s->cdx[i] >> 1 << i * 4 + 2;
+        int i_remapped = s->cdef[i] ? s->cdef[i]-1 : (s->ncomponents-1);
+
+        log2_chroma_wh |= s->cdy[i] >> 1 << i_remapped * 4 | s->cdx[i] >> 1 << i_remapped * 4 + 2;
     }
 
     s->numXtiles = ff_jpeg2000_ceildiv(s->width  - s->tile_offset_x, s->tile_width);
@@ -834,9 +855,6 @@ static int get_tlm(Jpeg2000DecoderContext *s, int n)
         case 2:
             bytestream2_get_be16(&s->g);
             break;
-        case 3:
-            bytestream2_get_be32(&s->g);
-            break;
         }
         if (SP == 0) {
             bytestream2_get_be16(&s->g);
@@ -1213,6 +1231,7 @@ static int jpeg2000_decode_packet(Jpeg2000DecoderContext *s, Jpeg2000Tile *tile,
 
                 bytestream2_get_bufferu(&s->g, cblk->data + cblk->length, cblk->lengthinc[cwsno]);
                 cblk->length   += cblk->lengthinc[cwsno];
+                memset(cblk->data + cblk->length, 0, 4);
                 cblk->lengthinc[cwsno] = 0;
                 if (cblk->nb_terminationsinc) {
                     cblk->nb_terminationsinc--;
@@ -1722,7 +1741,7 @@ static int decode_cblk(const Jpeg2000DecoderContext *s, Jpeg2000CodingStyle *cod
 
     while (passno--) {
         if (bpno < 0 || bpno > 29) {
-            av_log(s->avctx, AV_LOG_ERROR, "bpno became invalid\n");
+            av_log(s->avctx, AV_LOG_ERROR, "bpno (%d) became invalid\n", bpno);
             return AVERROR_INVALIDDATA;
         }
         switch(pass_t) {
@@ -1887,7 +1906,7 @@ static inline void roi_scale_cblk(Jpeg2000Cblk *cblk,
     }
 }
 
-static inline void tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile *tile)
+static inline int tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile *tile)
 {
     Jpeg2000T1Context t1;
 
@@ -1912,12 +1931,19 @@ static inline void tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile
                 int nb_precincts, precno;
                 Jpeg2000Band *band = rlevel->band + bandno;
                 int cblkno = 0, bandpos;
+                /* See Rec. ITU-T T.800, Equation E-2 */
+                int magp = quantsty->expn[subbandno] + quantsty->nguardbits - 1;
 
                 bandpos = bandno + (reslevelno > 0);
 
                 if (band->coord[0][0] == band->coord[0][1] ||
                     band->coord[1][0] == band->coord[1][1])
                     continue;
+
+                if ((codsty->cblk_style & JPEG2000_CTSY_HTJ2K_F) && magp >= 31) {
+                    avpriv_request_sample(s->avctx, "JPEG2000_CTSY_HTJ2K_F and magp >= 31");
+                    return AVERROR_PATCHWELCOME;
+                }
 
                 nb_precincts = rlevel->num_precincts_x * rlevel->num_precincts_y;
                 /* Loop on precincts */
@@ -1929,8 +1955,6 @@ static inline void tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile
                          cblkno < prec->nb_codeblocks_width * prec->nb_codeblocks_height;
                          cblkno++) {
                         int x, y, ret;
-                        /* See Rec. ITU-T T.800, Equation E-2 */
-                        int magp = quantsty->expn[subbandno] + quantsty->nguardbits - 1;
 
                         Jpeg2000Cblk *cblk = prec->cblk + cblkno;
 
@@ -1970,6 +1994,7 @@ static inline void tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile
             ff_dwt_decode(&comp->dwt, codsty->transform == FF_DWT97 ? (void*)comp->f_data : (void*)comp->i_data);
 
     } /*end comp */
+    return 0;
 }
 
 #define WRITE_FRAME(D, PIXEL)                                                                     \
@@ -1995,9 +2020,12 @@ static inline void tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile
             int h            = tile->comp[compno].coord[1][1] -                                   \
                                ff_jpeg2000_ceildiv(s->image_offset_y, s->cdy[compno]);            \
             int plane        = 0;                                                                 \
+            ptrdiff_t dstoffset = 0;                                                              \
                                                                                                   \
             if (planar)                                                                           \
                 plane = s->cdef[compno] ? s->cdef[compno]-1 : (s->ncomponents-1);                 \
+            else                                                                                  \
+                dstoffset = s->cdef[compno] ? s->cdef[compno] - 1 : compno;                       \
                                                                                                   \
             y    = tile->comp[compno].coord[1][0] -                                               \
                    ff_jpeg2000_ceildiv(s->image_offset_y, s->cdy[compno]);                        \
@@ -2007,7 +2035,7 @@ static inline void tile_codeblocks(const Jpeg2000DecoderContext *s, Jpeg2000Tile
                                                                                                   \
                 x   = tile->comp[compno].coord[0][0] -                                            \
                       ff_jpeg2000_ceildiv(s->image_offset_x, s->cdx[compno]);                     \
-                dst = line + x * pixelsize + compno*!planar;                                      \
+                dst = line + x * pixelsize + dstoffset;                                           \
                                                                                                   \
                 if (codsty->transform == FF_DWT97) {                                              \
                     for (; x < w; x++) {                                                          \
@@ -2046,7 +2074,9 @@ static int jpeg2000_decode_tile(AVCodecContext *avctx, void *td,
     AVFrame *picture = td;
     Jpeg2000Tile *tile = s->tile + jobnr;
 
-    tile_codeblocks(s, tile);
+    int ret = tile_codeblocks(s, tile);
+    if (ret < 0)
+        return ret;
 
     /* inverse MCT transformation */
     if (tile->codsty[0].mct)
@@ -2504,17 +2534,6 @@ static int jpeg2000_decode_frame(AVCodecContext *avctx, AVFrame *picture,
 
     if (ret = jpeg2000_read_bitstream_packets(s))
         goto end;
-
-    for (int x = 0; x < s->ncomponents; x++) {
-        if (s->cdef[x] < 0) {
-            for (x = 0; x < s->ncomponents; x++) {
-                s->cdef[x] = x + 1;
-            }
-            if ((s->ncomponents & 1) == 0)
-                s->cdef[s->ncomponents-1] = 0;
-            break;
-        }
-    }
 
     avctx->execute2(avctx, jpeg2000_decode_tile, picture, NULL, s->numXtiles * s->numYtiles);
 

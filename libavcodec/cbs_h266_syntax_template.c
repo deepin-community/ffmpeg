@@ -902,16 +902,17 @@ static int FUNC(vps) (CodedBitstreamContext *ctx, RWContext *rw,
                        current->vps_ols_mode_idc == 1) {
                 num_layers_in_ols = i + 1;
             } else if (current->vps_ols_mode_idc == 2) {
-                for (k = 0, j = 0; k <= current->vps_max_layers_minus1; k++) {
+                for (k = 0, j = 0; k <= current->vps_max_layers_minus1; k++)
                     if (layer_included_in_ols_flag[i][k])
                         j++;
-                    num_layers_in_ols = j;
-                }
+                num_layers_in_ols = j;
             }
             if (num_layers_in_ols > 1) {
                 num_multi_layer_olss++;
             }
         }
+        if (!current->vps_each_layer_is_an_ols_flag && num_multi_layer_olss == 0)
+            return AVERROR_INVALIDDATA;
     }
 
     for (i = 0; i <= current->vps_num_ptls_minus1; i++) {
@@ -1129,7 +1130,7 @@ static int FUNC(sps)(CodedBitstreamContext *ctx, RWContext *rw,
 
     flag(sps_subpic_info_present_flag);
     if (current->sps_subpic_info_present_flag) {
-        ue(sps_num_subpics_minus1, 1, VVC_MAX_SLICES - 1);
+        ue(sps_num_subpics_minus1, 0, VVC_MAX_SLICES - 1);
         if (current->sps_num_subpics_minus1 > 0) {
             flag(sps_independent_subpics_flag);
             flag(sps_subpic_same_size_flag);
@@ -1188,7 +1189,7 @@ static int FUNC(sps)(CodedBitstreamContext *ctx, RWContext *rw,
                     int num_subpic_cols = tmp_width_val /
                                      (current->sps_subpic_width_minus1[0] + 1);
                     if (tmp_width_val % (current->sps_subpic_width_minus1[0] + 1) ||
-                        tmp_height_val % (current->sps_subpic_width_minus1[0] + 1) ||
+                        tmp_height_val % (current->sps_subpic_height_minus1[0] + 1) ||
                         current->sps_num_subpics_minus1 !=
                         (num_subpic_cols * tmp_height_val /
                          (current->sps_subpic_height_minus1[0] + 1) - 1))
@@ -1212,29 +1213,29 @@ static int FUNC(sps)(CodedBitstreamContext *ctx, RWContext *rw,
                     infer(sps_loop_filter_across_subpic_enabled_flag[i], 0);
                 }
             }
-            ue(sps_subpic_id_len_minus1, 0, 15);
-            if ((1 << (current->sps_subpic_id_len_minus1 + 1)) <
-                current->sps_num_subpics_minus1 + 1) {
-                av_log(ctx->log_ctx, AV_LOG_ERROR,
-                       "sps_subpic_id_len_minus1(%d) is too small\n",
-                       current->sps_subpic_id_len_minus1);
-                return AVERROR_INVALIDDATA;
-            }
-            flag(sps_subpic_id_mapping_explicitly_signalled_flag);
-            if (current->sps_subpic_id_mapping_explicitly_signalled_flag) {
-                flag(sps_subpic_id_mapping_present_flag);
-                if (current->sps_subpic_id_mapping_present_flag) {
-                    for (i = 0; i <= current->sps_num_subpics_minus1; i++) {
-                        ubs(current->sps_subpic_id_len_minus1 + 1,
-                            sps_subpic_id[i], 1, i);
-                    }
-                }
-            }
         } else {
             infer(sps_subpic_ctu_top_left_x[0], 0);
             infer(sps_subpic_ctu_top_left_y[0], 0);
             infer(sps_subpic_width_minus1[0], tmp_width_val - 1);
             infer(sps_subpic_height_minus1[0], tmp_height_val - 1);
+        }
+        ue(sps_subpic_id_len_minus1, 0, 15);
+        if ((1 << (current->sps_subpic_id_len_minus1 + 1)) <
+            current->sps_num_subpics_minus1 + 1) {
+            av_log(ctx->log_ctx, AV_LOG_ERROR,
+                   "sps_subpic_id_len_minus1(%d) is too small\n",
+                   current->sps_subpic_id_len_minus1);
+            return AVERROR_INVALIDDATA;
+        }
+        flag(sps_subpic_id_mapping_explicitly_signalled_flag);
+        if (current->sps_subpic_id_mapping_explicitly_signalled_flag) {
+            flag(sps_subpic_id_mapping_present_flag);
+            if (current->sps_subpic_id_mapping_present_flag) {
+                for (i = 0; i <= current->sps_num_subpics_minus1; i++) {
+                    ubs(current->sps_subpic_id_len_minus1 + 1,
+                        sps_subpic_id[i], 1, i);
+                }
+            }
         }
     } else {
         infer(sps_num_subpics_minus1, 0);
@@ -1615,6 +1616,8 @@ static int FUNC(sps)(CodedBitstreamContext *ctx, RWContext *rw,
         ub(7, sps_extension_7bits);
 
         if (current->sps_range_extension_flag) {
+            if (current->sps_bitdepth_minus8 <= 10 - 8)
+                return AVERROR_INVALIDDATA;
             CHECK(FUNC(sps_range_extension)(ctx, rw, current));
         } else {
             infer(sps_extended_precision_flag, 0);
@@ -1867,10 +1870,10 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
         }
         unified_size = current->pps_tile_column_width_minus1[i - 1] + 1;
         while (remaining_size > 0) {
-            if (current->num_tile_columns > VVC_MAX_TILE_COLUMNS) {
+            if (i == VVC_MAX_TILE_COLUMNS) {
                 av_log(ctx->log_ctx, AV_LOG_ERROR,
-                       "NumTileColumns(%d) > than VVC_MAX_TILE_COLUMNS(%d)\n",
-                       current->num_tile_columns, VVC_MAX_TILE_COLUMNS);
+                       "Exceeded maximum tile columns (%d) (remaining size: %u)\n",
+                       VVC_MAX_TILE_COLUMNS, remaining_size);
                 return AVERROR_INVALIDDATA;
             }
             unified_size = FFMIN(remaining_size, unified_size);
@@ -1879,12 +1882,6 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
             i++;
         }
         current->num_tile_columns = i;
-        if (current->num_tile_columns > VVC_MAX_TILE_COLUMNS) {
-            av_log(ctx->log_ctx, AV_LOG_ERROR,
-                   "NumTileColumns(%d) > than VVC_MAX_TILE_COLUMNS(%d)\n",
-                   current->num_tile_columns, VVC_MAX_TILE_COLUMNS);
-            return AVERROR_INVALIDDATA;
-        }
 
         remaining_size = pic_height_in_ctbs_y;
         for (i = 0; i <= current->pps_num_exp_tile_rows_minus1; i++) {
@@ -1899,18 +1896,18 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
         unified_size = current->pps_tile_row_height_minus1[i - 1] + 1;
 
         while (remaining_size > 0) {
+            if (i == VVC_MAX_TILE_ROWS) {
+                av_log(ctx->log_ctx, AV_LOG_ERROR,
+                       "Exceeded maximum tile rows (%d) (remaining size: %u)\n",
+                       VVC_MAX_TILE_ROWS, remaining_size);
+                return AVERROR_INVALIDDATA;
+            }
             unified_size = FFMIN(remaining_size, unified_size);
             current->row_height_val[i] = unified_size;
             remaining_size -= unified_size;
             i++;
         }
         current->num_tile_rows=i;
-        if (current->num_tile_rows > VVC_MAX_TILE_ROWS) {
-            av_log(ctx->log_ctx, AV_LOG_ERROR,
-                   "NumTileRows(%d) > than VVC_MAX_TILE_ROWS(%d)\n",
-                   current->num_tile_rows, VVC_MAX_TILE_ROWS);
-            return AVERROR_INVALIDDATA;
-        }
 
         current->num_tiles_in_pic = current->num_tile_columns *
                                     current->num_tile_rows;
@@ -1946,16 +1943,18 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
             for (i = 0; i < current->pps_num_slices_in_pic_minus1; i++) {
                 tile_x = tile_idx % current->num_tile_columns;
                 tile_y = tile_idx / current->num_tile_columns;
+                if (tile_y >= current->num_tile_rows)
+                    return AVERROR_INVALIDDATA;
                 if (tile_x != current->num_tile_columns - 1) {
                     ues(pps_slice_width_in_tiles_minus1[i],
-                        0, current->num_tile_columns - 1, 1, i);
+                        0, current->num_tile_columns - 1 - tile_x, 1, i);
                 } else {
                     infer(pps_slice_width_in_tiles_minus1[i], 0);
                 }
                 if (tile_y != current->num_tile_rows - 1 &&
                     (current->pps_tile_idx_delta_present_flag || tile_x == 0)) {
                     ues(pps_slice_height_in_tiles_minus1[i],
-                        0, current->num_tile_rows - 1, 1, i);
+                        0, current->num_tile_rows - 1 - tile_y, 1, i);
                 } else {
                     if (tile_y == current->num_tile_rows - 1)
                         infer(pps_slice_height_in_tiles_minus1[i], 0);
@@ -1987,6 +1986,12 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
                         slice_top_left_ctu_y[i] = ctu_y;
                     } else {
                         uint16_t slice_height_in_ctus;
+                        int num_uniform_slices;
+
+                        if (i + current->pps_num_exp_slices_in_tile[i] >
+                            current->pps_num_slices_in_pic_minus1 + 1)
+                            return AVERROR_INVALIDDATA;
+
                         for (j = 0; j < current->pps_num_exp_slices_in_tile[i];
                              j++) {
                             ues(pps_exp_slice_height_in_ctus_minus1[i][j], 0,
@@ -2007,6 +2012,13 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
                         uniform_slice_height = 1 +
                             (j == 0 ? current->row_height_val[tile_y] - 1:
                             current->pps_exp_slice_height_in_ctus_minus1[i][j-1]);
+
+                        num_uniform_slices = (remaining_height_in_ctbs_y + uniform_slice_height - 1)
+                                           / uniform_slice_height;
+                        if (i + current->pps_num_exp_slices_in_tile[i] + num_uniform_slices >
+                            current->pps_num_slices_in_pic_minus1 + 1)
+                            return AVERROR_INVALIDDATA;
+
                         while (remaining_height_in_ctbs_y > uniform_slice_height) {
                             current->slice_height_in_ctus[i + j] =
                                                           uniform_slice_height;
@@ -2071,6 +2083,8 @@ static int FUNC(pps) (CodedBitstreamContext *ctx, RWContext *rw,
 
                 tile_x = tile_idx % current->num_tile_columns;
                 tile_y = tile_idx / current->num_tile_columns;
+                if (tile_y >= current->num_tile_rows)
+                    return AVERROR_INVALIDDATA;
 
                 ctu_x = 0, ctu_y = 0;
                 for (j = 0; j < tile_x; j++) {
@@ -2455,6 +2469,7 @@ static int FUNC(scaling_list_data)(CodedBitstreamContext *ctx, RWContext *rw,
 static int FUNC(aps)(CodedBitstreamContext *ctx, RWContext *rw,
                      H266RawAPS *current, int prefix)
 {
+    int aps_id_max = MAX_UINT_BITS(5);
     int err;
 
     if (prefix)
@@ -2467,7 +2482,12 @@ static int FUNC(aps)(CodedBitstreamContext *ctx, RWContext *rw,
                                        : VVC_SUFFIX_APS_NUT));
 
     ub(3, aps_params_type);
-    ub(5, aps_adaptation_parameter_set_id);
+    if (current->aps_params_type == VVC_ASP_TYPE_ALF ||
+        current->aps_params_type == VVC_ASP_TYPE_SCALING)
+        aps_id_max = 7;
+    else if (current->aps_params_type == VVC_ASP_TYPE_LMCS)
+        aps_id_max = 3;
+    u(5, aps_adaptation_parameter_set_id, 0, aps_id_max);
     flag(aps_chroma_present_flag);
     if (current->aps_params_type == VVC_ASP_TYPE_ALF)
         CHECK(FUNC(alf_data)(ctx, rw, current));
@@ -3397,7 +3417,7 @@ static int FUNC(slice_header) (CodedBitstreamContext *ctx, RWContext *rw,
                  tile_idx <=
                  current->sh_slice_address +
                  current->sh_num_tiles_in_slice_minus1; tile_idx++) {
-                tile_y = tile_idx / pps->num_tile_rows;
+                tile_y = tile_idx / pps->num_tile_columns;
                 height = pps->row_height_val[tile_y];
                 current->num_entry_points += (entropy_sync ? height : 1);
             }
@@ -3421,10 +3441,10 @@ static int FUNC(slice_header) (CodedBitstreamContext *ctx, RWContext *rw,
     return 0;
 }
 
-static int FUNC(sei_decoded_picture_hash) (CodedBitstreamContext *ctx,
-                                           RWContext *rw,
-                                           H266RawSEIDecodedPictureHash *
-                                           current)
+SEI_FUNC(sei_decoded_picture_hash, (CodedBitstreamContext *ctx,
+                                    RWContext *rw,
+                                    H266RawSEIDecodedPictureHash *current,
+                                    SEIMessageState *unused))
 {
     int err, c_idx, i;
 

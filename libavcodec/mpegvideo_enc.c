@@ -526,6 +526,12 @@ av_cold int ff_mpv_encode_init(AVCodecContext *avctx)
         av_log(avctx, AV_LOG_ERROR, "H.263 does not support resolutions above 2048x1152\n");
         return AVERROR(EINVAL);
     }
+    if (s->codec_id == AV_CODEC_ID_FLV1 &&
+        (avctx->width  > 65535 ||
+         avctx->height > 65535 )) {
+        av_log(avctx, AV_LOG_ERROR, "FLV does not support resolutions above 16bit\n");
+        return AVERROR(EINVAL);
+    }
     if ((s->codec_id == AV_CODEC_ID_H263  ||
          s->codec_id == AV_CODEC_ID_H263P ||
          s->codec_id == AV_CODEC_ID_RV20) &&
@@ -1194,12 +1200,12 @@ static int load_input_picture(MpegEncContext *s, const AVFrame *pic_arg)
             }
 
             for (int i = 0; i < 3; i++) {
-                int src_stride = pic_arg->linesize[i];
-                int dst_stride = i ? s->uvlinesize : s->linesize;
+                ptrdiff_t src_stride = pic_arg->linesize[i];
+                ptrdiff_t dst_stride = i ? s->uvlinesize : s->linesize;
                 int h_shift = i ? s->chroma_x_shift : 0;
                 int v_shift = i ? s->chroma_y_shift : 0;
-                int w = s->width  >> h_shift;
-                int h = s->height >> v_shift;
+                int w = AV_CEIL_RSHIFT(s->width , h_shift);
+                int h = AV_CEIL_RSHIFT(s->height, v_shift);
                 const uint8_t *src = pic_arg->data[i];
                 uint8_t *dst = pic->f->data[i];
                 int vpad = 16;
@@ -1252,6 +1258,8 @@ static int load_input_picture(MpegEncContext *s, const AVFrame *pic_arg)
     /* shift buffer entries */
     for (int i = flush_offset; i <= MAX_B_FRAMES; i++)
         s->input_picture[i - flush_offset] = s->input_picture[i];
+    for (int i = MAX_B_FRAMES + 1 - flush_offset; i <= MAX_B_FRAMES; i++)
+        s->input_picture[i] = NULL;
 
     s->input_picture[encoding_delay] = pic;
 
@@ -1433,7 +1441,7 @@ static int estimate_best_b_count(MpegEncContext *s)
                 goto fail;
             }
 
-            rd += (out_size * lambda2) >> (FF_LAMBDA_SHIFT - 3);
+            rd += (out_size * (uint64_t)lambda2) >> (FF_LAMBDA_SHIFT - 3);
         }
 
         /* get the delayed frames */
@@ -1442,7 +1450,7 @@ static int estimate_best_b_count(MpegEncContext *s)
             ret = out_size;
             goto fail;
         }
-        rd += (out_size * lambda2) >> (FF_LAMBDA_SHIFT - 3);
+        rd += (out_size * (uint64_t)lambda2) >> (FF_LAMBDA_SHIFT - 3);
 
         rd += c->error[0] + c->error[1] + c->error[2];
 
@@ -2795,21 +2803,13 @@ static void write_mb_info(MpegEncContext *s)
     bytestream_put_byte(&ptr, 0); /* vmv2 */
 }
 
-static void update_mb_info(MpegEncContext *s, int startcode)
+static void update_mb_info(MpegEncContext *s)
 {
     if (!s->mb_info)
         return;
     if (put_bytes_count(&s->pb, 0) - s->prev_mb_info >= s->mb_info) {
         s->mb_info_size += 12;
         s->prev_mb_info = s->last_mb_info;
-    }
-    if (startcode) {
-        s->prev_mb_info = put_bytes_count(&s->pb, 0);
-        /* This might have incremented mb_info_size above, and we return without
-         * actually writing any info into that slot yet. But in that case,
-         * this will be called again at the start of the after writing the
-         * start code, actually writing the mb info. */
-        return;
     }
 
     s->last_mb_info = put_bytes_count(&s->pb, 0);
@@ -3027,8 +3027,11 @@ static int encode_thread(AVCodecContext *c, void *arg){
                     case AV_CODEC_ID_H263:
                     case AV_CODEC_ID_H263P:
                         if (CONFIG_H263_ENCODER) {
-                            update_mb_info(s, 1);
+                            if (s->mb_info && put_bytes_count(&s->pb, 0) - s->prev_mb_info >= s->mb_info)
+                                s->mb_info_size += 12;
+
                             ff_h263_encode_gob_header(s, mb_y);
+                            s->prev_mb_info = put_bits_count(&s->pb)/8;
                         }
                     break;
                     }
@@ -3054,7 +3057,7 @@ static int encode_thread(AVCodecContext *c, void *arg){
             s->mb_skipped=0;
             s->dquant=0; //only for QP_RD
 
-            update_mb_info(s, 0);
+            update_mb_info(s);
 
             if (mb_type & (mb_type-1) || (s->mpv_flags & FF_MPV_FLAG_QP_RD)) { // more than 1 MB type possible or FF_MPV_FLAG_QP_RD
                 int next_block=0;

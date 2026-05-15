@@ -1198,6 +1198,9 @@ ff_jpeg2000_decode_htj2k(const Jpeg2000DecoderContext *s, Jpeg2000CodingStyle *c
     av_assert0(width * height <= 4096);
     av_assert0(width * height > 0);
 
+    if (roi_shift)
+        avpriv_report_missing_feature(s->avctx, "ROI shift");
+
     memset(t1->data, 0, t1->stride * height * sizeof(*t1->data));
     memset(t1->flags, 0, t1->stride * (height + 2) * sizeof(*t1->flags));
 
@@ -1223,10 +1226,20 @@ ff_jpeg2000_decode_htj2k(const Jpeg2000DecoderContext *s, Jpeg2000CodingStyle *c
                "Cleanup pass length must be at least 2 bytes in length\n");
         return AVERROR_INVALIDDATA;
     }
+    // this might arise either if the codestream is corrupted; or contains multiple HT Sets
+    // (see Rec. ITU-T T.814, Annex B.1), which the parser does not currently support
+    if (Lcup + Lref != cblk->length)
+        return AVERROR_INVALIDDATA;
+
     Dcup = cblk->data;
     Dref  = cblk->data + Lcup; // Dref comes after the refinement segment
     S_blk = p0 + cblk->zbp;
     pLSB  = 30 - S_blk;
+
+    if (pLSB <= 1 || pLSB >= 31) {
+        avpriv_request_sample(s->avctx, "pLSB %d", pLSB);
+        return AVERROR_PATCHWELCOME;
+    }
 
     Scup = (Dcup[Lcup - 1] << 4) + (Dcup[Lcup - 2] & 0x0F);
 
