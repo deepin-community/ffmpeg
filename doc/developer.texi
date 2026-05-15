@@ -396,6 +396,10 @@ If you apply a patch, send an
 answer to ffmpeg-devel (or wherever you got the patch from) saying that
 you applied the patch.
 
+@subheading Credit any researchers
+If a commit/patch fixes an issues found by some researcher, always credit the
+researcher in the commit message for finding/reporting the issue.
+
 @subheading Always wait long enough before pushing changes
 Do NOT commit to code actively maintained by others without permission.
 Send a patch to ffmpeg-devel. If no one answers within a reasonable
@@ -639,6 +643,11 @@ transmission. Also ensure the correct mime type is used
 patch is inline or attached per mail.
 You can check @url{https://patchwork.ffmpeg.org}, if your patch does not show up, its mime type
 likely was wrong.
+
+@subheading How to setup git send-email?
+
+Please see @url{https://git-send-email.io/}.
+For gmail additionally see @url{https://shallowsky.com/blog/tech/email/gmail-app-passwds.html}.
 
 @subheading Sending patches from email clients
 Using @code{git send-email} might not be desirable for everyone. The
@@ -923,6 +932,25 @@ FATE under the supervision of either the @strong{memcheck} or the
 In case you need finer control over how valgrind is invoked, use the
 @code{--target-exec='valgrind <your_custom_valgrind_options>} option in
 your configure line instead.
+
+@anchor{Maintenance}
+@chapter Maintenance process
+
+@anchor{MAINTAINERS}
+@section MAINTAINERS
+
+The developers maintaining each part of the codebase are listed in @file{MAINTAINERS}.
+Being listed in @file{MAINTAINERS}, gives one the right to have git write access to
+the specific repository.
+
+@anchor{Becoming a maintainer}
+@section Becoming a maintainer
+
+People add themselves to @file{MAINTAINERS} by sending a patch like any other code
+change. These get reviewed by the community like any other patch. It is expected
+that, if someone has an objection to a new maintainer, she is willing to object
+in public with her full name and is willing to take over maintainership for the area.
+
 
 @anchor{Release process}
 @chapter Release process

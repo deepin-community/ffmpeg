@@ -1023,17 +1023,20 @@ static int decode_sbit_chunk(AVCodecContext *avctx, PNGDecContext *s,
         return AVERROR_INVALIDDATA;
     }
 
-    channels = ff_png_get_nb_channels(s->color_type);
+    channels = s->color_type & PNG_COLOR_MASK_PALETTE ? 3 : ff_png_get_nb_channels(s->color_type);
 
-    if (bytestream2_get_bytes_left(gb) != channels)
+    if (bytestream2_get_bytes_left(gb) != channels) {
+        av_log(avctx, AV_LOG_ERROR, "Invalid sBIT size: %d, expected: %d\n",
+            bytestream2_get_bytes_left(gb), channels);
         return AVERROR_INVALIDDATA;
+    }
 
     for (int i = 0; i < channels; i++) {
         int b = bytestream2_get_byteu(gb);
         bits = FFMAX(b, bits);
     }
 
-    if (bits < 0 || bits > s->bit_depth) {
+    if (bits <= 0 || bits > (s->color_type & PNG_COLOR_MASK_PALETTE ? 8 : s->bit_depth)) {
         av_log(avctx, AV_LOG_ERROR, "Invalid significant bits: %d\n", bits);
         return AVERROR_INVALIDDATA;
     }
@@ -1158,7 +1161,7 @@ static int decode_fctl_chunk(AVCodecContext *avctx, PNGDecContext *s,
         return AVERROR_INVALIDDATA;
     }
 
-    if ((sequence_number == 0 || !s->last_picture.f->data[0]) &&
+    if ((sequence_number == 0 || !s->last_picture.f) &&
         dispose_op == APNG_DISPOSE_OP_PREVIOUS) {
         // No previous frame to revert to for the first frame
         // Spec says to just treat it as a APNG_DISPOSE_OP_BACKGROUND

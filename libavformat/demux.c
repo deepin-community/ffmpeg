@@ -775,9 +775,14 @@ static int64_t select_from_pts_buffer(AVStream *st, int64_t *pts_buffer, int64_t
         } else {
             for (int i = 0; i < delay; i++) {
                 if (pts_buffer[i] != AV_NOPTS_VALUE) {
-                    int64_t diff = FFABS(pts_buffer[i] - dts)
-                                   + (uint64_t)sti->pts_reorder_error[i];
-                    diff = FFMAX(diff, sti->pts_reorder_error[i]);
+#define ABSDIFF(a,b) (((a) < (b)) ? (b) - (uint64_t)(a) : ((a) - (uint64_t)(b)))
+                    uint64_t diff = ABSDIFF(pts_buffer[i], dts);
+
+                    if (diff > INT64_MAX - sti->pts_reorder_error[i]) {
+                        diff = INT64_MAX;
+                    } else
+                        diff += sti->pts_reorder_error[i];
+
                     sti->pts_reorder_error[i] = diff;
                     sti->pts_reorder_error_count[i]++;
                     if (sti->pts_reorder_error_count[i] > 250) {
@@ -2436,7 +2441,7 @@ static int extract_extradata(FFFormatContext *si, AVStream *st, const AVPacket *
 int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
 {
     FFFormatContext *const si = ffformatcontext(ic);
-    int count = 0, ret = 0;
+    int count = 0, ret = 0, err;
     int64_t read_size;
     AVPacket *pkt1 = si->pkt;
     int64_t old_offset  = avio_tell(ic->pb);
@@ -2947,9 +2952,11 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
         }
     }
 
-    ret = compute_chapters_end(ic);
-    if (ret < 0)
+    err = compute_chapters_end(ic);
+    if (err < 0) {
+        ret = err;
         goto find_stream_info_err;
+    }
 
     /* update the stream parameters from the internal codec contexts */
     for (unsigned i = 0; i < ic->nb_streams; i++) {

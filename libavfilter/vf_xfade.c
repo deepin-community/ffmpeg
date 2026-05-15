@@ -956,7 +956,7 @@ static void vertopen##name##_transition(AVFilterContext *ctx,                   
 {                                                                                    \
     XFadeContext *s = ctx->priv;                                                     \
     const int width = out->width;                                                    \
-    const float w2 = out->width / 2;                                                 \
+    const float w2 = out->width / 2.0;                                                 \
                                                                                      \
     for (int y = slice_start; y < slice_end; y++) {                                  \
         for (int x = 0; x < width; x++) {                                            \
@@ -984,7 +984,7 @@ static void vertclose##name##_transition(AVFilterContext *ctx,                  
     XFadeContext *s = ctx->priv;                                                     \
     const int nb_planes = s->nb_planes;                                              \
     const int width = out->width;                                                    \
-    const float w2 = out->width / 2;                                                 \
+    const float w2 = out->width / 2.0;                                                 \
                                                                                      \
     for (int y = slice_start; y < slice_end; y++) {                                  \
         for (int x = 0; x < width; x++) {                                            \
@@ -1012,7 +1012,7 @@ static void horzopen##name##_transition(AVFilterContext *ctx,                   
     XFadeContext *s = ctx->priv;                                                     \
     const int nb_planes = s->nb_planes;                                              \
     const int width = out->width;                                                    \
-    const float h2 = out->height / 2;                                                \
+    const float h2 = out->height / 2.0;                                                \
                                                                                      \
     for (int y = slice_start; y < slice_end; y++) {                                  \
         const float smooth = 2.f - fabsf((y - h2) / h2) - progress * 2.f;            \
@@ -1040,7 +1040,7 @@ static void horzclose##name##_transition(AVFilterContext *ctx,                  
     XFadeContext *s = ctx->priv;                                                     \
     const int nb_planes = s->nb_planes;                                              \
     const int width = out->width;                                                    \
-    const float h2 = out->height / 2;                                                \
+    const float h2 = out->height / 2.0;                                                \
                                                                                      \
     for (int y = slice_start; y < slice_end; y++) {                                  \
         const float smooth = 1.f + fabsf((y - h2) / h2) - progress * 2.f;            \
@@ -2288,8 +2288,11 @@ static int xfade_activate(AVFilterContext *avctx)
         // Check if we are not yet transitioning, in which case
         // just request and forward the input frame.
         if (s->start_pts > s->pts) {
+            int ret;
             s->passthrough = 1;
-            ff_inlink_consume_frame(in_a, &s->xf[0]);
+            ret = ff_inlink_consume_frame(in_a, &s->xf[0]);
+            if (ret < 0)
+                return ret;
             return ff_filter_frame(outlink, s->xf[0]);
         }
         s->passthrough = 0;
@@ -2297,8 +2300,14 @@ static int xfade_activate(AVFilterContext *avctx)
         // We are transitioning, so we need a frame from second input
         if (ff_inlink_check_available_frame(in_b)) {
             int ret;
-            ff_inlink_consume_frame(avctx->inputs[0], &s->xf[0]);
-            ff_inlink_consume_frame(avctx->inputs[1], &s->xf[1]);
+            ret = ff_inlink_consume_frame(avctx->inputs[0], &s->xf[0]);
+            if (ret < 0)
+                return ret;
+            ret = ff_inlink_consume_frame(avctx->inputs[1], &s->xf[1]);
+            if (ret < 0) {
+                av_frame_free(&s->xf[0]);
+                return ret;
+            }
 
             // Calculate PTS offset to first input
             if (s->inputs_offset_pts == AV_NOPTS_VALUE)

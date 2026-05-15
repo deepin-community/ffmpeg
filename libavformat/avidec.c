@@ -549,9 +549,11 @@ static int avi_read_header(AVFormatContext *s)
                     avi->movi_end = avi->fsize;
                 av_log(s, AV_LOG_TRACE, "movi end=%"PRIx64"\n", avi->movi_end);
                 goto end_of_header;
-            } else if (tag1 == MKTAG('I', 'N', 'F', 'O'))
+            } else if (tag1 == MKTAG('I', 'N', 'F', 'O')) {
+                if (size < 4)
+                    return AVERROR_INVALIDDATA;
                 ff_read_riff_info(s, size - 4);
-            else if (tag1 == MKTAG('n', 'c', 'd', 't'))
+            } else if (tag1 == MKTAG('n', 'c', 'd', 't'))
                 avi_read_nikon(s, list_end);
 
             break;
@@ -1115,6 +1117,10 @@ static int read_gab2_sub(AVFormatContext *s, AVStream *st, AVPacket *pkt)
         int size;
         AVProbeData pd;
         unsigned int desc_len;
+
+        if (ast->sub_ctx)
+            return 0;
+
         AVIOContext *pb = avio_alloc_context(pkt->data + 7,
                                              pkt->size - 7,
                                              0, NULL, NULL, NULL, NULL);
@@ -1696,7 +1702,7 @@ static int check_stream_max_drift(AVFormatContext *s)
     int *idx = av_calloc(s->nb_streams, sizeof(*idx));
     if (!idx)
         return AVERROR(ENOMEM);
-    for (min_pos = pos = 0; min_pos != INT64_MAX; pos = min_pos + 1LU) {
+    for (min_pos = pos = 0; min_pos != INT64_MAX; pos = min_pos + 1ULL) {
         int64_t max_dts = INT64_MIN / 2;
         int64_t min_dts = INT64_MAX / 2;
         int64_t max_buffer = 0;
@@ -1817,6 +1823,10 @@ static int avi_load_index(AVFormatContext *s)
             avi->index_loaded=2;
             ret = 0;
         }else if (tag == MKTAG('L', 'I', 'S', 'T')) {
+            if (size < 4) {
+                av_log(s, AV_LOG_WARNING, "Invalid size (%u) LIST in index\n", size);
+                break;
+            }
             uint32_t tag1 = avio_rl32(pb);
 
             if (tag1 == MKTAG('I', 'N', 'F', 'O'))

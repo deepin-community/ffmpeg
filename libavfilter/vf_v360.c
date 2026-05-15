@@ -286,7 +286,8 @@ static int remap##ws##_##bits##bit_slice(AVFilterContext *ctx, void *arg, int jo
     const AVFrame *in = td->in;                                                                            \
     AVFrame *out = td->out;                                                                                \
                                                                                                            \
-    for (int stereo = 0; stereo < 1 + s->out_stereo > STEREO_2D; stereo++) {                               \
+                                                                                                           \
+    for (int stereo = 0; stereo < 1 + (s->out_stereo > STEREO_2D); stereo++) {                               \
         for (int plane = 0; plane < s->nb_planes; plane++) {                                               \
             const unsigned map = s->map[plane];                                                            \
             const int in_linesize  = in->linesize[plane];                                                  \
@@ -3787,6 +3788,8 @@ static int barrelsplit_to_xyz(const V360Context *s,
         case 3: // back bottom
             vf = (y * 2.f - 1.5f) / scaleh + 3.f - facef;
             break;
+        default:
+            av_assert0(0);
         }
         l_x = (0.5f - uf) / scalew;
         l_y =  0.5f * dir_vert;
@@ -4251,8 +4254,8 @@ static int v360_slice(AVFilterContext *ctx, void *arg, int jobnr, int nb_jobs)
                 int16_t *u = r->u[p] + ((j - slice_start) * uv_linesize + i) * elements;
                 int16_t *v = r->v[p] + ((j - slice_start) * uv_linesize + i) * elements;
                 int16_t *ker = r->ker[p] + ((j - slice_start) * uv_linesize + i) * elements;
-                uint8_t *mask8 = p ? NULL : r->mask + ((j - slice_start) * s->pr_width[0] + i);
-                uint16_t *mask16 = p ? NULL : (uint16_t *)r->mask + ((j - slice_start) * s->pr_width[0] + i);
+                uint8_t  *mask8  = (p || !r->mask) ? NULL : r->mask + ((j - slice_start) * s->pr_width[0] + i);
+                uint16_t *mask16 = (p || !r->mask) ? NULL : (uint16_t *)r->mask + ((j - slice_start) * s->pr_width[0] + i);
                 int in_mask, out_mask;
 
                 if (s->out_transpose)

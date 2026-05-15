@@ -250,6 +250,7 @@ static int config_enc_params(EbSvtAv1EncConfiguration *param,
     if (avctx->gop_size > 1)
         param->intra_period_length  = avctx->gop_size - 1;
 
+#if SVT_AV1_CHECK_VERSION(1, 1, 0)
     // In order for SVT-AV1 to force keyframes by setting pic_type to
     // EB_AV1_KEY_PICTURE on any frame, force_key_frames has to be set. Note
     // that this does not force all frames to be keyframes (it only forces a
@@ -260,6 +261,7 @@ static int config_enc_params(EbSvtAv1EncConfiguration *param,
     // to be updated to set force_key_frames accordingly.
     if (avctx->gop_size == 1)
         param->force_key_frames = 1;
+#endif
 
     if (avctx->framerate.num > 0 && avctx->framerate.den > 0) {
         param->frame_rate_numerator   = avctx->framerate.num;
@@ -537,6 +539,14 @@ static int eb_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
     if (svt_ret == EB_NoErrorEmptyQueue)
         return AVERROR(EAGAIN);
 
+#if SVT_AV1_CHECK_VERSION(2, 0, 0)
+    if (headerPtr->flags & EB_BUFFERFLAG_EOS) {
+         svt_enc->eos_flag = EOS_RECEIVED;
+         svt_av1_enc_release_out_buffer(&headerPtr);
+         return AVERROR_EOF;
+    }
+#endif
+
     ref = get_output_ref(avctx, svt_enc, headerPtr->n_filled_len);
     if (!ref) {
         av_log(avctx, AV_LOG_ERROR, "Failed to allocate output packet.\n");
@@ -571,8 +581,10 @@ static int eb_receive_packet(AVCodecContext *avctx, AVPacket *pkt)
     if (headerPtr->pic_type == EB_AV1_NON_REF_PICTURE)
         pkt->flags |= AV_PKT_FLAG_DISPOSABLE;
 
+#if !(SVT_AV1_CHECK_VERSION(2, 0, 0))
     if (headerPtr->flags & EB_BUFFERFLAG_EOS)
         svt_enc->eos_flag = EOS_RECEIVED;
+#endif
 
     ff_side_data_set_encoder_stats(pkt, headerPtr->qp * FF_QP2LAMBDA, NULL, 0, pict_type);
 
