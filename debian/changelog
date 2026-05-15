@@ -1,3 +1,11 @@
+ffmpeg (7:6.1.5-0deepin1) unstable; urgency=medium
+
+  * Import upstream version 6.1.5.
+  * Refresh patches.
+  * Drop all previous security patches.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Fri, 15 May 2026 10:30:13 +0800
+
 ffmpeg (7:6.1.1-2deepin9) unstable; urgency=medium
 
   * security: Fix CVE-2023-49501 CVE-2023-49528 CVE-2024-35365 CVE-2024-
