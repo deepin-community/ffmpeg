@@ -14,10 +14,10 @@ I'm not sure had the complete C API we're using anyway.
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/configure b/configure
-index a89cfa6..ca011c1 100755
+index 49f59a1..8223b84 100755
 --- a/configure
 +++ b/configure
-@@ -6705,11 +6705,11 @@ enabled libfreetype       && require_pkg_config libfreetype freetype2 "ft2build.
+@@ -6730,11 +6730,11 @@ enabled libfreetype       && require_pkg_config libfreetype freetype2 "ft2build.
  enabled libfribidi        && require_pkg_config libfribidi fribidi fribidi.h fribidi_version_info
  enabled libharfbuzz       && require_pkg_config libharfbuzz harfbuzz hb.h hb_buffer_create
  enabled libglslang && { check_lib spirv_compiler glslang/Include/glslang_c_interface.h glslang_initialize_process \
