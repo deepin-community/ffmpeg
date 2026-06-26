@@ -1,3 +1,13 @@
+ffmpeg (7:6.1.5-0deepin3) unstable; urgency=medium
+
+  * CVE-2026-8461: Fix heap out-of-bounds write in MagicYUV decoder
+    Complete upstream backport (PR #23159):
+    - reject slice_height misaligned with chroma vshift
+    - apply slice-height sanity check to progressive mode
+    - fix 1-line MEDIAN slice OOB read in magy_decode_slice10
+
+ -- Wang Yu <wangyu@uniontech.com>  Fri, 26 Jun 2026 16:20:59 +0800
+
 ffmpeg (7:6.1.5-0deepin2) unstable; urgency=medium
 
   * CVE-2026-8461: Fix heap out-of-bounds write in MagicYUV decoder
