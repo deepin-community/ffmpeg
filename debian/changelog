@@ -1,3 +1,12 @@
+ffmpeg (7:7.0.2-3deepin1) unstable; urgency=medium
+
+  * Fix CVE-2026-30999: Heap buffer overflow in av_bprint_finalize()
+    - Free the AVBprint buffer after using it in tools/zmqsend.c
+    - Memory leak leading to potential DoS via crafted input
+    - Upstream: https://git.ffmpeg.org/git/ffmpeg.git/commit/144af8f8
+
+ -- deepin-ci-robot <packages@deepin.org>  Thu, 02 Jul 2026 20:54:00 +0800
+
 ffmpeg (7:6.1.5-0deepin3) unstable; urgency=medium
 
   * CVE-2026-8461: Fix heap out-of-bounds write in MagicYUV decoder
