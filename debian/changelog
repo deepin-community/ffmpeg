@@ -3,8 +3,11 @@ ffmpeg (7:6.1.5-0deepin4) unstable; urgency=medium
   * CVE-2026-58049: Fix out-of-bounds write in RASC decoder decode_dlta()
     Check that 32-bit DLTA accesses stay within the row boundary.
     Upstream commit: 11ff18a6c80187405fc492f9bb07ba9f2f663f76
+  * CVE-2026-30999: Fix heap buffer overflow in av_bprint_finalize()
+    Free the AVBprint buffer after using it in tools/zmqsend.c
+    Upstream: https://git.ffmpeg.org/git/ffmpeg.git/commit/144af8f8
 
- -- deepin-ci-robot <packages@deepin.org>  Wed, 01 Jul 2026 13:50:13 +0800
+ -- deepin-ci-robot <packages@deepin.org>  Thu, 02 Jul 2026 22:06:00 +0800
 
 ffmpeg (7:6.1.5-0deepin3) unstable; urgency=medium
 
