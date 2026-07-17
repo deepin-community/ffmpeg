@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.5-0deepin5) unstable; urgency=medium
+
+  * fix(cve): CVE-2024-32228
+
+ -- deepin-ci-robot <packages@deepin.org>  Fri, 17 Jul 2026 16:26:51 +0800
+
 ffmpeg (7:6.1.5-0deepin4) unstable; urgency=medium
 
   * CVE-2026-58049: Fix out-of-bounds write in RASC decoder decode_dlta()
