@@ -3,3 +3,4 @@
 0003-CVE-2026-58049-Fix-OOB-write-in-RASC-decoder-decode_dlta.patch
 0004-CVE-2026-30999-Fix-heap-buffer-overflow-in-av_bprint_finalize.patch
 CVE-2024-35369.patch
+CVE-2025-12343.patch
