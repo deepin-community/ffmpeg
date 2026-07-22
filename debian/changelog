@@ -1,3 +1,13 @@
+ffmpeg (7:6.1.5-0deepin7) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-12706 - avcodec/rasc: fix heap use-after-free in decode_move()
+  * fix(cve): CVE-2025-1594 - aacenc_tns: clamp filter direction energy measurement
+  * fix(cve): CVE-2025-10256 - libavfilter/af_firequalizer: Add check for av_malloc_array()
+  * fix(cve): CVE-2024-32228 - avcodec/hevcdec: fix segfault on invalid film grain metadata
+  * fix(cve): CVE-2026-30997 - avcodec/av1dec: check that primary_ref_frame is within range
+
+ -- deepin-ci-robot <packages@deepin.org>  Tue, 21 Jul 2026 18:00:00 +0800
+
 ffmpeg (7:6.1.5-0deepin4) unstable; urgency=medium
 
   * CVE-2026-58049: Fix out-of-bounds write in RASC decoder decode_dlta()

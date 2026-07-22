@@ -2,3 +2,8 @@
 0002-CVE-2026-8461-Fix-heap-OOB-write-in-MagicYUV-decoder.patch
 0003-CVE-2026-58049-Fix-OOB-write-in-RASC-decoder-decode_dlta.patch
 0004-CVE-2026-30999-Fix-heap-buffer-overflow-in-av_bprint_finalize.patch
+CVE-2026-12706.patch
+CVE-2025-1594.patch
+CVE-2025-10256.patch
+CVE-2024-32228.patch
+CVE-2026-30997.patch
