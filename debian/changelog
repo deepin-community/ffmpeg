@@ -1,3 +1,9 @@
+ffmpeg (7:6.1.5-0deepin6) unstable; urgency=medium
+
+  * fix(cve): CVE-2024-35369
+
+ -- deepin-ci-robot <packages@deepin.org>  Mon, 27 Jul 2026 15:46:14 +0800
+
 ffmpeg (7:6.1.5-0deepin5) unstable; urgency=medium
 
   * CVE-2024-32228: not-affected
