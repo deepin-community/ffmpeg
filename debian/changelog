@@ -1,6 +1,10 @@
 ffmpeg (7:6.1.5-0deepin8) unstable; urgency=medium
 
   * fix(cve): CVE-2026-38349
+  * fix(cve): CVE-2026-38347 (unknown) - swscale/alphablend: don't
+    overread alpha plane on subsampled odd size   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/bb88e295394e5db584063bd
+    e790bfbdba04d54ec
 
  -- deepin-ci-robot <packages@deepin.org>  Tue, 01 Sep 2026 04:08:22 +0800
 
