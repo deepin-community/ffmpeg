@@ -5,6 +5,10 @@ ffmpeg (7:6.1.5-0deepin8) unstable; urgency=medium
     overread alpha plane on subsampled odd size   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/bb88e295394e5db584063bd
     e790bfbdba04d54ec
+  * fix(cve): CVE-2026-64832 (high) - avcodec/nvdec: don't double free
+    the fdd-owned context on the sep_ref error path   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/4c6217477fc64305055b37d
+    9d1d0d76d30e37f97
 
  -- deepin-ci-robot <packages@deepin.org>  Tue, 01 Sep 2026 04:08:22 +0800
 
