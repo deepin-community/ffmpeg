@@ -1,3 +1,40 @@
+ffmpeg (7:6.1.5-0deepin8) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-38349
+  * fix(cve): CVE-2026-38347 (unknown) - swscale/alphablend: don't
+    overread alpha plane on subsampled odd size   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/bb88e295394e5db584063bd
+    e790bfbdba04d54ec
+  * fix(cve): CVE-2026-64832 (high) - avcodec/nvdec: don't double free
+    the fdd-owned context on the sep_ref error path   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/4c6217477fc64305055b37d
+    9d1d0d76d30e37f97
+
+ -- deepin-ci-robot <packages@deepin.org>  Tue, 01 Sep 2026 04:08:22 +0800
+
+ffmpeg (7:6.1.5-0deepin7) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-18393
+
+ -- deepin-ci-robot <packages@deepin.org>  Mon, 31 Aug 2026 22:19:16 +0800
+
+ffmpeg (7:6.1.5-0deepin6) unstable; urgency=medium
+
+  * fix(cve): CVE-2024-35369
+
+ -- deepin-ci-robot <packages@deepin.org>  Mon, 27 Jul 2026 15:46:14 +0800
+
+ffmpeg (7:6.1.5-0deepin5) unstable; urgency=medium
+
+  * CVE-2024-32228: not-affected
+    The SIGSEGV in hevc_frame_end() (film grain metadata that passes
+    ff_h274_film_grain_params_supported() but not av_film_grain_params_select())
+    exists only in FFmpeg >= 7.0, where hevc_frame_end() dereferences the result
+    of av_film_grain_params_select() unguarded. This package (6.1.5) uses the
+    older side-data based hevc_frame_end() with its own NULL/assert checks, so
+    it is not affected. Ref: Debian security tracker.
+ -- deepin-ci-robot <packages@deepin.org>  Mon, 27 Jul 2026 15:39:11 +0800
+
 ffmpeg (7:6.1.5-0deepin4) unstable; urgency=medium
 
   * CVE-2026-58049: Fix out-of-bounds write in RASC decoder decode_dlta()
