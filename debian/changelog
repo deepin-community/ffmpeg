@@ -9,6 +9,10 @@ ffmpeg (7:6.1.5-0deepin8) unstable; urgency=medium
     the fdd-owned context on the sep_ref error path   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/4c6217477fc64305055b37d
     9d1d0d76d30e37f97
+  * fix(cve): CVE-2026-38350 (unknown) - [PATCH] swscale/output: Fix all
+    bilinear integer overflows   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/aca41d3d9327be4d6ab036f
+    494b700118fcc04e1
 
  -- deepin-ci-robot <packages@deepin.org>  Tue, 01 Sep 2026 04:08:22 +0800
 
