@@ -29,6 +29,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/9d786e4b5e9b84826519285
     74de33772aeee7be1,https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/b274f
     0d21ba684446fd59b49e00f3f8e9ed954df
+  * fix(cve): CVE-2026-65706 (high) - avfilter/vf_swaprect: size the
+    temp row buffer for the widest plane   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/a7e38b617b32f996beaa371
+    bbf04b39907d7a527
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
