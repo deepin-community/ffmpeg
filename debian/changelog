@@ -25,6 +25,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     units larger than the RTP payload buffer   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/1cdeb3c4e7f1f8566d846b9
     b451e01c376398818.patch
+  * fix(cve): CVE-2026-64834 (high) - avformat/rtpdec_asf: reject ASF
+    objects smaller than their header   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/11d5f475be95d22d5f06922
+    20cc772b116abc632
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
