@@ -8,6 +8,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     decoded tail to avoid heap disclosure   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/e7cbfd1c507b57a806a5825
     b87d609963e862c8c.patch
+  * fix(cve): CVE-2026-65704 (high) - avformat/ty: don't let the Series2
+    AC3 trim underflow the packet size   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/de771bd52774a52d45b0e2c
+    82e56995a1ef40df7
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 00:05:42 +0800
 
