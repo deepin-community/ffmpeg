@@ -12,6 +12,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     AC3 trim underflow the packet size   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/de771bd52774a52d45b0e2c
     82e56995a1ef40df7
+  * fix(cve): CVE-2026-70632 (high) - avcodec/cfhd: reject transform-2
+    output wider than the plane   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/16b2049d4d5222db6cd7c03
+    1409058571c94f6a9.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 00:05:42 +0800
 
