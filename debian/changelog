@@ -17,6 +17,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     signed overflow in the capacity check   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/93f2a525ec6c7b467bae683
     22720d10188fc6e30.patch
+  * fix(cve): CVE-2026-75141 (high) - avformat/hevc: reject hvcC NAL
+    arrays that overflow the 16-bit count   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/acf5d7cdc1f9ae8752c23e1
+    ea8d7f355ed780781.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
