@@ -20,6 +20,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     negative fragment index   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/65b0dab903e5975e036b30e
     cc58f5935d4f151e0
+  * fix(cve): CVE-2026-65703 (high) - avcodec/tdsc: unref the reference
+    frame before reallocating on size change   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/fd3ee52fab34d98a95b787d
+    0b5ff45685766200c
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 00:05:42 +0800
 
