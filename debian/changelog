@@ -4,6 +4,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     caller buffer size in librist_read   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/1c10bcc2e17255dacb717a2
     5ab3db142ce390602.patch
+  * fix(cve): CVE-2026-66038 (high) - avcodec/lcldec: zero the not-
+    decoded tail to avoid heap disclosure   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/e7cbfd1c507b57a806a5825
+    b87d609963e862c8c.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 00:05:42 +0800
 
