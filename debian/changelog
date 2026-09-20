@@ -16,6 +16,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     output wider than the plane   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/16b2049d4d5222db6cd7c03
     1409058571c94f6a9.patch
+  * fix(cve): CVE-2026-75146 (high) - avformat/dashdec: reject a
+    negative fragment index   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/65b0dab903e5975e036b30e
+    cc58f5935d4f151e0
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 00:05:42 +0800
 
