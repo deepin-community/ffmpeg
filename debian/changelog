@@ -33,6 +33,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     temp row buffer for the widest plane   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/a7e38b617b32f996beaa371
     bbf04b39907d7a527
+  * fix(cve): CVE-2026-70628 (high) - avcodec/dvbsub_parser: avoid
+    signed overflow in the capacity check   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/93f2a525ec6c7b467bae683
+    22720d10188fc6e30.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
