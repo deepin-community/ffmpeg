@@ -65,6 +65,14 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     given to can_seek_to_key_sample()   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/cb8a5ca8ab36884064ac4de
     5175ae82c93edfcb2.patch
+  * CVE-2026-66040: not-affected
+    The overrun that upstream commit b506fafec9 hardens lives in the eXIf
+    chunk writer of libavcodec/pngenc.c, which sizes the chunk from
+    ff_exif_get_buffer()/AV_EXIF_TIFF_HEADER. Neither the helper nor
+    AV_FRAME_DATA_EXIF exists in 6.1.5 - pngenc.c here never writes an eXIf
+    chunk, EXIF output support was added after the 6.1 branch - so the
+    vulnerable code is absent and no patch is required.
+    Upstream: https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/b506fafec9a19fcbc2be5271875fd4a63d6615bc.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
