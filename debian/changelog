@@ -84,6 +84,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     chunk, EXIF output support was added after the 6.1 branch - so the
     vulnerable code is absent and no patch is required.
     Upstream: https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/b506fafec9a19fcbc2be5271875fd4a63d6615bc.patch
+  * fix(cve): CVE-2026-65705 (high) - avfilter/vf_floodfill: remove
+    unneeded variables   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/f186c50cf53aec20e9a2905
+    9cb22ca3f2d59201c
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
