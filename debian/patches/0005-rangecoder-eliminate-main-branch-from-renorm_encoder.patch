@@ -1,0 +1,67 @@
+From: Michael Niedermayer <michael@niedermayer.cc>
+Date: Wed, 16 Oct 2024 21:20:42 +0200
+Subject: avcodec/rangecoder: eliminate main branch from renorm_encoder()
+
+Backport of upstream commit b2da4c33e31f85b9c755f2cdb08f5db694e90ca9
+(avcodec/rangecoder: eliminate main branch from renorm_encoder()).
+
+The 6.1 branch still carries the original branchy form of
+renorm_encoder(), whose first arm (c->outstanding_byte < 0) short
+circuits the low <= 0xFF00 / low >= 0x10000 cases. GCC miscompiles that
+form when the translation unit is built with -O3 together with
+-fstack-protector-all (which debian/rules requests through
+--toolchain=hardened): the FFV1 range coder then emits a corrupt
+extradata.
+
+Observed on x86_64 as a FATE regression of
+fate-vsynth1-ffv1-2pass, ffv1-v3-yuv422p10, ffv1-v3-yuv444p16,
+ffv1-v3-rgb48 and the vsynth2/vsynth3 equivalents: the encoded stream
+is byte identical except that the FFV1 extradata grows from 190 to 298
+bytes and is rejected by the decoder with "quant_table_index out of
+range".
+
+The upstream rewrite is a pure refactoring (the generated bitstream is
+unchanged) that avoids the problematic branch, and it makes the test
+pass again with and without -fstack-protector-all.
+
+--- a/libavcodec/rangecoder.h
++++ b/libavcodec/rangecoder.h
+@@ -61,25 +61,19 @@ void ff_build_rac_states(RangeCoder *c, int factor, int max_p);
+ 
+ static inline void renorm_encoder(RangeCoder *c)
+ {
+-    // FIXME: optimize
+-        if (c->outstanding_byte < 0) {
+-            c->outstanding_byte = c->low >> 8;
+-        } else if (c->low <= 0xFF00) {
+-            *c->bytestream++ = c->outstanding_byte;
+-            for (; c->outstanding_count; c->outstanding_count--)
+-                *c->bytestream++ = 0xFF;
+-            c->outstanding_byte = c->low >> 8;
+-        } else if (c->low >= 0x10000) {
+-            *c->bytestream++ = c->outstanding_byte + 1;
+-            for (; c->outstanding_count; c->outstanding_count--)
+-                *c->bytestream++ = 0x00;
+-            c->outstanding_byte = (c->low >> 8) & 0xFF;
+-        } else {
+-            c->outstanding_count++;
+-        }
+-
+-        c->low     = (c->low & 0xFF) << 8;
+-        c->range <<= 8;
++    if (c->low - 0xFF01 >= 0x10000 - 0xFF01U) {
++        int mask = c->low - 0xFF01 >> 31;
++        *c->bytestream = c->outstanding_byte + 1 + mask;
++        c->bytestream += c->outstanding_byte >= 0;
++        for (; c->outstanding_count; c->outstanding_count--)
++            *c->bytestream++ = mask;
++        c->outstanding_byte = c->low >> 8;
++    } else {
++        c->outstanding_count++;
++    }
++
++    c->low     = (c->low & 0xFF) << 8;
++    c->range <<= 8;
+ }
+ 
+ static inline int get_rac_count(RangeCoder *c)

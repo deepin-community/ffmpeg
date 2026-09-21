@@ -65,6 +65,17 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     given to can_seek_to_key_sample()   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/cb8a5ca8ab36884064ac4de
     5175ae82c93edfcb2.patch
+  * fix(ffv1): backport avcodec/rangecoder: eliminate main branch from
+    renorm_encoder()   The x86_64 FATE run fails for fate-vsynth1/2/3-ffv1-2pass,
+    ffv1-v3-yuv422p10, ffv1-v3-yuv444p16 and ffv1-v3-rgb48 because
+    --toolchain=hardened adds -fstack-protector-all, which makes gcc -O3
+    miscompile the branchy form of renorm_encoder() that the 6.1 branch still
+    carries; the FFV1 range coder then emits a corrupt extradata (190 -> 298
+    bytes) which the decoder rejects with "quant_table_index out of range".
+    The upstream rewrite is a pure refactoring (identical bitstream) and
+    restores the reference hashes on all architectures.   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/b2da4c33e31f85b9c755f2c
+    db08f5db694e90ca9
   * CVE-2026-66040: not-affected
     The overrun that upstream commit b506fafec9 hardens lives in the eXIf
     chunk writer of libavcodec/pngenc.c, which sizes the chunk from
