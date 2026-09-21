@@ -53,6 +53,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     streams and bound the stream count   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/dbd495f066a85ba96b17433
     f4306582aa37c3951.patch
+  * fix(cve): CVE-2026-70631 (medium) - avcodec/tiff: reject inflate
+    output shorter than the strip   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/2f234ea34c81288e3840fca
+    632dd16481d8de39f
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
