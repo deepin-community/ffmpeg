@@ -29,6 +29,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     objects smaller than their header   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/11d5f475be95d22d5f06922
     20cc772b116abc632
+  * fix(cve): CVE-2026-64830 (high) - avformat/vobsub: reuse subtitle
+    streams and bound the stream count   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/dbd495f066a85ba96b17433
+    f4306582aa37c3951.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
