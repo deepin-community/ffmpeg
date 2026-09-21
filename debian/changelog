@@ -37,6 +37,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     output shorter than the strip   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/2f234ea34c81288e3840fca
     632dd16481d8de39f
+  * fix(cve): CVE-2026-70629 (medium) - avcodec/rscc: do not leave
+    uninitilized data when the input is too short   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/cd1f545cf27ba08f6f5b31b
+    1e92665d7874d4fd7
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
