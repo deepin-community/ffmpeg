@@ -61,6 +61,10 @@ ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
     uninitilized data when the input is too short   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/cd1f545cf27ba08f6f5b31b
     1e92665d7874d4fd7
+  * fix(cve): CVE-2026-13858 (medium) - avformat/mov: Fix negative index
+    given to can_seek_to_key_sample()   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/cb8a5ca8ab36884064ac4de
+    5175ae82c93edfcb2.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 21 Sep 2026 01:54:45 +0800
 
