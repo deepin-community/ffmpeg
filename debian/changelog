@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin10) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-70630 (medium) - avcodec/screenpresso: reject
+    deflate output shorter than the frame   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/705890061467ad550ecc1da
+    d5eea07f28ccfb43e.patch
+
+ -- deepin-ci-robot <packages@deepin.org>  Tue, 22 Sep 2026 16:45:43 +0800
+
 ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
 
   * fix(cve): CVE-2026-75143 (critical) - avformat/librist: honor the
