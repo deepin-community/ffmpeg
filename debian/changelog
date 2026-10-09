@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin10) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-107695 (high) - avformat/hls: reject Master
+    Playlist tags in a Media Playlist   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/c364ab176f722bdabc886845e770
+    c9eacbc1e3e5
+
+ -- deepin-ci-robot <packages@deepin.org>  Fri, 09 Oct 2026 08:37:35 +0800
+
 ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
 
   * fix(cve): CVE-2026-75143 (critical) - avformat/librist: honor the
