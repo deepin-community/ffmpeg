@@ -21,6 +21,9 @@ ffmpeg (7:6.1.5-0deepin10) unstable; urgency=medium
     the SSH server host key   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/2b822b7fb6ed195546bc9fd
     9bdb794e98222bdce
+  * fix(cve): CVE-2026-107696 (high) - avformat/rtsp: limit the number
+    of redirects   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/24902.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Fri, 09 Oct 2026 08:37:35 +0800
 
