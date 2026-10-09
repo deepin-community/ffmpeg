@@ -4,6 +4,10 @@ ffmpeg (7:6.1.5-0deepin10) unstable; urgency=medium
     Playlist tags in a Media Playlist   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/c364ab176f722bdabc886845e770
     c9eacbc1e3e5
+  * fix(cve): CVE-2026-107697 (medium) - [PATCH] avformat/hls: Enforce
+    protocol checks when opening child playlists   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/23602df9cd1b485c45ba6f533d3b
+    85569de3f323.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Fri, 09 Oct 2026 08:37:35 +0800
 
