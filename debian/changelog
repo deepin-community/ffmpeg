@@ -1,3 +1,36 @@
+ffmpeg (7:6.1.5-0deepin10) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-107695 (high) - avformat/hls: reject Master
+    Playlist tags in a Media Playlist   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/c364ab176f722bdabc886845e770
+    c9eacbc1e3e5
+  * fix(cve): CVE-2026-107697 (medium) - [PATCH] avformat/hls: Enforce
+    protocol checks when opening child playlists   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/23602df9cd1b485c45ba6f533d3b
+    85569de3f323.patch
+  * fix(cve): CVE-2026-107676 (medium) - avutil/hdr_dynamic_metadata:
+    fix uninitialized bytes when color saturation is set without tone
+    mapping   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/2c2f6e96e31795ae95a8f83
+    23a493ffbc493111f
+  * fix(cve): CVE-2026-107678 (medium) - avutil/encryption_info: avoid
+    stack exhaustion freeing init info list   Upstream:
+    https://github.com/CVEProject/cvelistV5/commit/c457a5abff9bc7803f535
+    9475755f333ee194cc3
+  * fix(cve): CVE-2026-107675 (medium) - [PATCH] avformat/libssh: verify
+    the SSH server host key   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/2b822b7fb6ed195546bc9fd
+    9bdb794e98222bdce
+  * fix(cve): CVE-2026-107696 (high) - avformat/rtsp: limit the number
+    of redirects   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/24902.patch
+  * fix(cve): CVE-2026-107660 (medium) - avformat/tls_mbedtls: set the
+    expected hostname for numeric hosts   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/0cd2a70eacd510c2efed48b
+    9fc177c7cb2bc549f
+
+ -- deepin-ci-robot <packages@deepin.org>  Fri, 09 Oct 2026 08:37:35 +0800
+
 ffmpeg (7:6.1.5-0deepin9) unstable; urgency=medium
 
   * fix(cve): CVE-2026-75143 (critical) - avformat/librist: honor the
