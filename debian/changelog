@@ -13,6 +13,10 @@ ffmpeg (7:6.1.5-0deepin10) unstable; urgency=medium
     mapping   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/2c2f6e96e31795ae95a8f83
     23a493ffbc493111f
+  * fix(cve): CVE-2026-107678 (medium) - avutil/encryption_info: avoid
+    stack exhaustion freeing init info list   Upstream:
+    https://github.com/CVEProject/cvelistV5/commit/c457a5abff9bc7803f535
+    9475755f333ee194cc3
 
  -- deepin-ci-robot <packages@deepin.org>  Fri, 09 Oct 2026 08:37:35 +0800
 
