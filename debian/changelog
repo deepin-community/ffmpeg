@@ -1,3 +1,18 @@
+ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
+
+  * fix(build): add gzip -n to PTX compression for reproducible builds
+    - Backport upstream 1a7a85137e59 (ffbuild: Add gzip -n flag to fix
+      reproducible builds) from FFmpeg 7.0; never backported to the
+      6.1 release branch
+    - Without -n, gzip embeds the wall-clock mtime of the generated
+      .ptx file into the .ptx.gz header, which bin2c compiles into
+      *.ptx.o objects inside libavfilter.a
+    - This made libavfilter-dev differ between builds run at different
+      times: uos-debrebuild on 7:6.1.5-0deepin9 showed the eight
+      *.ptx.o members as the only difference between the two builds
+
+ -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
+
 ffmpeg (7:6.1.5-0deepin11) unstable; urgency=medium
 
   * fix(cve): CVE-2026-107677 (medium) - avstring: av_strireplace with
