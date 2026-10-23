@@ -1,0 +1,42 @@
+From: Rob Hall <robxnanocode@outlook.com>
+Date: Fri, 29 Sep 2023 23:25:39 +0000
+Subject: ffbuild: Add gzip -n flag to fix reproducible builds
+
+Cherry-picked from upstream commit 1a7a85137e593f5164027da7ce53219829253f65
+(github.com/FFmpeg/FFmpeg). It is part of FFmpeg 7.0 but was never
+backported to the 6.1 release branch.
+
+Without the -n flag, gzip embeds the wall-clock mtime of the generated
+.ptx file (and its original file name) into the .ptx.gz header, which
+ffbuild/bin2c then turns into *.ptx.o objects. The mtime therefore ends
+up inside libavfilter.a and makes libavfilter-dev differ between builds
+run at different times, e.g. observed with the uos-debrebuild pipeline
+on 7:6.1.5-0deepin9 where two builds only differed in the eight
+*.ptx.o members of libavfilter.a:
+
+    libavfilter/vf_scale_cuda.ptx.o, .rodata gzip header mtime:
+    build A: 0x6ad9854c (2026-10-22 03:38:52 UTC)
+    build B: 0x6ad98721 (2026-10-22 03:46:41 UTC)
+
+The -n flag makes gzip omit both the timestamp and the file name, so
+the PTX blobs are byte-identical no matter when the build runs.
+---
+ ffbuild/common.mak | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ffbuild/common.mak b/ffbuild/common.mak
+index fba7256b4f..1d0a78d2a1 100644
+--- a/ffbuild/common.mak
++++ b/ffbuild/common.mak
+@@ -130,7 +130,7 @@ $(BIN2CEXE): ffbuild/bin2c_host.o
+ ifdef CONFIG_PTX_COMPRESSION
+ %.ptx.gz: TAG = GZIP
+ %.ptx.gz: %.ptx
+-	$(M)gzip -c9 $(patsubst $(SRC_PATH)/%,$(SRC_LINK)/%,$<) >$@
++	$(M)gzip -nc9 $(patsubst $(SRC_PATH)/%,$(SRC_LINK)/%,$<) >$@
+ 
+ %.ptx.c: %.ptx.gz $(BIN2CEXE)
+ 	$(BIN2C) $(patsubst $(SRC_PATH)/%,$(SRC_LINK)/%,$<) $@ $(subst .,_,$(basename $(notdir $@)))
+-- 
+2.39.5
+
