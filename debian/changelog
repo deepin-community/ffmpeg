@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-70630 (medium) - avcodec/screenpresso: reject
+    deflate output shorter than the frame   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/705890061467ad550ecc1da
+    d5eea07f28ccfb43e
+
+ -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
+
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
 
   * fix(build): add gzip -n to PTX compression for reproducible builds

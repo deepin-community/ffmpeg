@@ -35,3 +35,4 @@ CVE-2026-107696.patch
 CVE-2026-107660.patch
 CVE-2026-107677.patch
 fix-reproducible-builds-ptx-gzip.patch
+CVE-2026-70630.patch
