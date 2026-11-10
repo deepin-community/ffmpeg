@@ -74,6 +74,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     a926e92bec70,https://github.com/FFmpeg/FFmpeg/commit/c0d308a9a616f4a
     bcc4e0a4d86f7de92ecdef9f6,https://github.com/FFmpeg/FFmpeg/commit/eb
     47d7bb6cf13042c6ab14e22fc0c0c3a6e51e12
+  * fix(cve): CVE-2026-125227 (high) - avcodec/cbs_jpeg: check the scan
+    data size without overflowing size_t   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/b89ce54d93bf644433dfa9fbc34f
+    19c22237691a.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
