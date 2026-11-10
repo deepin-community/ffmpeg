@@ -99,6 +99,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     init_get_bits8() for failure   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/9691e4fde64e14de73c298562c4e
     475f9412b5ad.patch
+  * fix(cve): CVE-2026-125268 (medium) - avcodec/cfhd: allocate the
+    inverse transform scratch buffer zeroed   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/0bfa350291b2118f6d590263dc1e
+    e9cea766c0f1.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
