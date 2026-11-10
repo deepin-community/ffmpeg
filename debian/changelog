@@ -21,6 +21,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     one rect in text mode   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/7c06aea6f0d26dd70c94ccba6127
     059cd0a0e352
+  * fix(cve): CVE-2026-125257 (high) - avcodec/nellymoserenc: keep the
+    trellis index below OPT_SIZE   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/733bec3e19759520ccdbeb6c3c0c
+    ae280bbe6dc5
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
