@@ -13,6 +13,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     buffer alignment issue   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/b8f159858e2fd29dae4fa34d9e71
     3bbf9bbf190e.patch
+  * fix(cve): CVE-2026-125213 (high) - avcodec/psd: reject an
+    uncompressed image size above INT_MAX   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/aa4b80b54ee8645b5a77fe835ab2
+    bbae1c9c465c
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 

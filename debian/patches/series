@@ -38,3 +38,4 @@ fix-reproducible-builds-ptx-gzip.patch
 CVE-2026-70630.patch
 CVE-2026-125239.patch
 CVE-2026-125208.patch
+CVE-2026-125213.patch
