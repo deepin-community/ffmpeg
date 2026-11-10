@@ -68,6 +68,12 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     too small for the median predictor   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/45f98d0819efe2b7ce93e9034b7e
     6a4ed6700621
+  * fix(cve): CVE-2026-125181 (high) - avcodec/flicvideo: decrement
+    pixel_countdown in the big endian FLI_BRUN byte swap   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/ee30fb98c0d4e97abbd5e371d2a3
+    a926e92bec70,https://github.com/FFmpeg/FFmpeg/commit/c0d308a9a616f4a
+    bcc4e0a4d86f7de92ecdef9f6,https://github.com/FFmpeg/FFmpeg/commit/eb
+    47d7bb6cf13042c6ab14e22fc0c0c3a6e51e12
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
