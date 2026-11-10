@@ -25,6 +25,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     trellis index below OPT_SIZE   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/733bec3e19759520ccdbeb6c3c0c
     ae280bbe6dc5
+  * fix(cve): CVE-2026-125204 (high) - avcodec/encode: reject video
+    frames that do not match the encoder   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/254cebc4e8e1358ffcf7ba6fc13b
+    cc4a98db80de,https://github.com/FFmpeg/FFmpeg/commit/9b99973b2bbecee
+    0b7e1e57035b95498b42f54a6
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
