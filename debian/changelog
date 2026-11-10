@@ -119,6 +119,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     reader before publishing the frame   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/db77b0b8318ddb38b5a3227724da
     088a325a4308.patch
+  * fix(cve): CVE-2026-125072 (medium) - avcodec/mpegaudiodec: fail on
+    packets too large for the bit reader   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/0b007e0634de5b4424b9993c95a6
+    c1c50de0115b.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
