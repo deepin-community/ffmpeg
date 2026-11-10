@@ -103,6 +103,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     inverse transform scratch buffer zeroed   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/0bfa350291b2118f6d590263dc1e
     e9cea766c0f1.patch
+  * fix(cve): CVE-2026-125193 (medium) - avcodec/bitpacked: check the
+    packet size before using it as a UYVY422 frame   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/f1205ee01893a3b509d96b5fe3ae
+    da755c517973.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
