@@ -115,6 +115,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     js_subband_start beyond subbands   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/7145d13201c9f9c5253f40295714
     faa4f4ada1a0
+  * fix(cve): CVE-2026-125220 (medium) - avcodec/mimic: set up the bit
+    reader before publishing the frame   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/db77b0b8318ddb38b5a3227724da
+    088a325a4308.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
