@@ -42,6 +42,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     with the context width as stride   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/26c2980980295e5516f308c5a279
     2d2a72e43eae
+  * fix(cve): CVE-2026-125233 (high) - avcodec/dvbsubenc: Account for
+    the full CLUT segment header   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/7f80b2ad83f37a4998d9617495c9
+    2b28a7339a90.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
