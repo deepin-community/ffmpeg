@@ -17,6 +17,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     uncompressed image size above INT_MAX   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/aa4b80b54ee8645b5a77fe835ab2
     bbae1c9c465c
+  * fix(cve): CVE-2026-125210 (high) - avcodec/libaribcaption: allocate
+    one rect in text mode   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/7c06aea6f0d26dd70c94ccba6127
+    059cd0a0e352
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
