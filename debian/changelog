@@ -46,6 +46,9 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     the full CLUT segment header   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/7f80b2ad83f37a4998d9617495c9
     2b28a7339a90.patch
+  * fix(cve): CVE-2026-125202 (high) - avcodec/vaapi_hevc: reject tile
+    counts the VAAPI picture parameters cannot hold   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/25136
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
