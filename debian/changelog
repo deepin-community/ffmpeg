@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-125197 (medium) - avcodec/lcldec: check the
+    packet size before reading the ZLIB multithread header   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/12e5d4ec98b7add7bcac9d8131d9
+    a6dfb2549966
+
+ -- deepin-ci-robot <packages@deepin.org>  Wed, 11 Nov 2026 07:00:51 +0800
+
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
 
   * fix(build): add gzip -n to PTX compression for reproducible builds
