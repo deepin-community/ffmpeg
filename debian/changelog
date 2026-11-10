@@ -56,6 +56,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     uncompressed chunk sizes   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/62c308e0416bb701447817fe6f0b
     ff074d206215.patch
+  * fix(cve): CVE-2026-125211 (high) - avcodec/libaribcaption: free only
+    the added rects on ass errors   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/4ec127c82678b06658e963291f27
+    2881dc878735.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
