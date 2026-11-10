@@ -49,6 +49,9 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
   * fix(cve): CVE-2026-125202 (high) - avcodec/vaapi_hevc: reject tile
     counts the VAAPI picture parameters cannot hold   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/25136
+  * fix(cve): CVE-2026-125219 (high) - avcodec/vdpau_hevc: reject tile
+    counts the VDPAU picture info cannot hold   Upstream:
+    https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/25136.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
