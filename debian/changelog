@@ -52,6 +52,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
   * fix(cve): CVE-2026-125219 (high) - avcodec/vdpau_hevc: reject tile
     counts the VDPAU picture info cannot hold   Upstream:
     https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/25136.patch
+  * fix(cve): CVE-2026-125222 (high) - avcodec/hap: bound the sum of the
+    uncompressed chunk sizes   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/62c308e0416bb701447817fe6f0b
+    ff074d206215.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
