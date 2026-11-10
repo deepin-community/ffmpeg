@@ -9,6 +9,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/25136.patch,https://gith
     ub.com/aghdetngf/cybervault-cve-
     intel/commit/8f39dd6ca149ecfce759e870062509ad29617702
+  * fix(cve): CVE-2026-125208 (high) - libavcodec/v4l2_buffers: fixing
+    buffer alignment issue   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/b8f159858e2fd29dae4fa34d9e71
+    3bbf9bbf190e.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
