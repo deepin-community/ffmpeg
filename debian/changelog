@@ -30,6 +30,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/254cebc4e8e1358ffcf7ba6fc13b
     cc4a98db80de,https://github.com/FFmpeg/FFmpeg/commit/9b99973b2bbecee
     0b7e1e57035b95498b42f54a6
+  * fix(cve): CVE-2026-125214 (high) - avcodec/pcm-bluray: copy only
+    whole samples on big-endian hosts   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/a61b32df3fd67f76c1c8c7ea51be
+    2a66efb0f945.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
