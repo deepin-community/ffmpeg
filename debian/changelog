@@ -14,6 +14,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     packets with more than two H.264 pictures   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/d8013c061725631261d7326c07d2
     af3a67fa4bc1
+  * fix(cve): CVE-2026-125066 (medium) - avcodec/cljrdec: check
+    init_get_bits8() for failure   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/d40c1b12811814fc6c2d0816527b
+    003d8510ea06
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
