@@ -26,6 +26,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     uncompressed alpha chunks shorter than the image   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/92b318e0b33623720d9f128ad7bc
     5fa8277c34f7.patch
+  * fix(cve): CVE-2026-125255 (medium) - avcodec/mjpegdec: reject a SOF
+    without a preceding SOI when a hwaccel is used   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/f58a6776546567367baf5223df9f
+    fbfd289299f8
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
