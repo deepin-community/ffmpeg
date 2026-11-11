@@ -45,6 +45,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     leaking setBuffer backing storage   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/e5d295b3cd467fc713300e208ba2
     dacc7ff603a0.patch
+  * fix(cve): CVE-2026-125206 (low) - avcodec/proresenc_kostya: fill
+    macroblock rows past the end of the bottom field   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/9edd06f8612c242b83bf9e3d14aa
+    85180015a211
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
