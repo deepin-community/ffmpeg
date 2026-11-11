@@ -173,6 +173,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/4d2d58efa9b9f3802893b1db0ea1
     edfbe1cc66ef.patch
 
+  * fix(cve): CVE-2026-125243 (medium) - avcodec/jpeglsdec: decode line
+    interleaved scans with more than 8 bits   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/60bc31fcf6543505e6d2fc1a9399
+    cca95f54ba4d
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
