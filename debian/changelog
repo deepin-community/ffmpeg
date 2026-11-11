@@ -26,6 +26,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     dimensions before storing them   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/12c589a37d093cc55618f8377b09
     2dc21416806f
+  * fix(cve): CVE-2026-125221 (medium) - avcodec/flac_parser: score the
+    header chain without recursion   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/972fe1ccd326538fe9a6b5d5094b
+    7880b5443429.patch
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
