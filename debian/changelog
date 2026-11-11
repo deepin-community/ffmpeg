@@ -33,6 +33,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     RLE block unpacking before copying the block   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/c896bbb24535685509a816af0966
     5cb73bf2d0c7.patch
+  * fix(cve): CVE-2026-125264 (medium) - avcodec/jpegxl_parser: stop
+    before a TOC that cannot fit in the input   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/bc896c613ec0d4ad0108d62fbdda
+    0196f69e7121
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
