@@ -8,6 +8,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     frames with more than 73728 samples   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/968e9e948ed8c9ba90dbc875e60b
     843c755cf4ba
+  * fix(cve): CVE-2026-125216 (medium) - avcodec/dpxenc: reject
+    unsupported depths for RGB48 input   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/aa5fd7d287db4f469fdcbe444f7f
+    9f38c8c289c7.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Wed, 11 Nov 2026 19:27:14 +0800
 
