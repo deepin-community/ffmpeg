@@ -9,6 +9,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     color tables   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/ac0106851a4dac555c967421dfc9
     6c0135183133
+  * fix(cve): CVE-2026-125073 (medium) - avcodec/imc: reject blocks
+    whose bit budget is already exceeded   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/9b26bb4c9a4457d480899a1bf64e
+    c080eceb1acd.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
