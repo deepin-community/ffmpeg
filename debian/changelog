@@ -138,6 +138,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/3b1cbb5e0f66b85d15f1d3527436
     520b3f4711ec.patch
 
+  * fix(cve): CVE-2026-125194 (medium) - avcodec/pcm-dvdenc: do not
+    encode a frame with fewer samples than a block   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/cfe6a6cd7de59341a70ebe6a2d47
+    7f3281aec834.patch
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
