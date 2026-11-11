@@ -14,6 +14,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     check that the number of Obus are within a limit   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/c90bbc2036bac67e95777638bdc8
     6157a775858a
+  * fix(cve): CVE-2026-125069 (medium) - avcodec/motionpixels: check
+    init_get_bits8() for failure   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/26b4c37526fe0ecf1095b45daac0
+    8050f25f7659.patch
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
