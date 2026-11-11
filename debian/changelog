@@ -10,6 +10,11 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     - This made libavfilter-dev differ between builds run at different
       times: uos-debrebuild on 7:6.1.5-0deepin9 showed the eight
       *.ptx.o members as the only difference between the two builds
+  * fix(cve): CVE-2026-125188 (low) - avcodec/proresenc_anatoliy: fill
+    the slice from the field's own number of lines   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/d74f5e0559ba09d942c476878563
+    49b03c1115dd,https://github.com/FFmpeg/FFmpeg/commit/ad2287d6d2511af
+    66222e8f7e40d546bc8d461ec
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
