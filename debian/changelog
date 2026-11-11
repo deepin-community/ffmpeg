@@ -25,6 +25,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     lookup table bits in one step   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/f9f732b444a2fc27dcc4fe52084d
     3d435f827864.patch
+  * fix(cve): CVE-2026-125064 (medium) - avcodec/g726: check
+    init_get_bits8() for failure   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/ec887b13a88afbaf44fb28c3045b
+    da5d434da8dc.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
