@@ -4,6 +4,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     screen under the cursor only after it was painted   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/50865f20b1f474e6b11735c88f66
     8751bc9aa528
+  * fix(cve): CVE-2026-125104 (medium) - avcodec/apedec: reject legacy
+    frames with more than 73728 samples   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/968e9e948ed8c9ba90dbc875e60b
+    843c755cf4ba
 
  -- deepin-ci-robot <packages@deepin.org>  Wed, 11 Nov 2026 19:27:14 +0800
 
