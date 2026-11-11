@@ -28,6 +28,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     bitstream buffer table when the picture is released   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/2c6cd8098844f2367f8ba0a3a483
     e405c8f76449.patch
+  * fix(cve): CVE-2026-125175 (medium) - avcodec/flashsv: reject blocks
+    whose inflate output is shorter than the block   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/50d206a75b5e60261d71b25657ae
+    04891eb60290,https://github.com/FFmpeg/FFmpeg/commit/cfb40c912927fdd
+    2c1186b7b6aca468422da23db
 
  -- deepin-ci-robot <packages@deepin.org>  Wed, 11 Nov 2026 19:27:14 +0800
 
