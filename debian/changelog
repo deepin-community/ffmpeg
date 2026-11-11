@@ -30,6 +30,11 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     header chain without recursion   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/972fe1ccd326538fe9a6b5d5094b
     7880b5443429.patch
+  * fix(cve): CVE-2026-125232 (medium) - avcodec/mpegvideo_enc: keep
+    MPEG-4 B frame chains within the 16 bit frame distance   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/16d19ccbce802634662a9bf18a56
+    79cf27da2848,https://github.com/FFmpeg/FFmpeg/commit/bf0a2e4680df92d
+    8de6514090d350152eb7845b8
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
