@@ -35,6 +35,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/16d19ccbce802634662a9bf18a56
     79cf27da2848,https://github.com/FFmpeg/FFmpeg/commit/bf0a2e4680df92d
     8de6514090d350152eb7845b8
+  * fix(cve): CVE-2026-125207 (medium) - avcodec/interplayacm: reject
+    blocks larger than 1M samples   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/6ecaddb9c1d59cf7f5de16017122
+    fecb2fa0c67c.patch
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
