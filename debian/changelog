@@ -16,6 +16,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     stuffing only in the entropy-coded part of a scan   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/ee457fdcdb3a069ef35910a2e1ca
     cff10906b131.patch
+  * fix(cve): CVE-2026-125176 (medium) - avcodec/flashsv: require two
+    bytes for a 15-bit pixel in decode_hybrid   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/16d0f7f408ba47b4091a22109d4f
+    22f5fd57820a
 
  -- deepin-ci-robot <packages@deepin.org>  Wed, 11 Nov 2026 19:27:14 +0800
 
