@@ -22,6 +22,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     default block size in 64 bit   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/e621da8ecdbef8edb8336cc899b9
     62159dc2465c.patch
+  * fix(cve): CVE-2026-125178 (medium) - avcodec/tdsc: validate cursor
+    dimensions before storing them   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/12c589a37d093cc55618f8377b09
+    2dc21416806f
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
