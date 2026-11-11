@@ -21,6 +21,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     multichannel channel list to cover all channels   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/01e1bb126179879201429952cc2d
     caea0d50d603.patch
+  * fix(cve): CVE-2026-125183 (medium) - avcodec/hevc/ps: skip the depth
+    lookup table bits in one step   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/f9f732b444a2fc27dcc4fe52084d
+    3d435f827864.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
