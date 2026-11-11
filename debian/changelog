@@ -4,6 +4,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     row of input per line for 1 to 8 bits per pixel   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/01a395b935b9da12dbeca588a713
     0c4db6a14689.patch
+  * fix(cve): CVE-2026-125261 (medium) - avcodec/sgienc: compute the row
+    offset in signed arithmetic   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/c6e5b6105aa13f6b0df2a646da60
+    8078cfe52d79.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 00:41:01 +0800
 
