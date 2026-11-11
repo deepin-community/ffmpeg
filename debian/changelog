@@ -22,6 +22,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     init_get_bits8() for failure   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/1206df65e54b6e9c01459c7cd9a9
     5f9bde2736d7
+  * fix(cve): CVE-2026-125068 (medium) - avcodec/bink: check
+    init_get_bits8() for failure   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/5195d6f9729ad00b93e4d0f0bea3
+    09416fb4713e.patch
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
