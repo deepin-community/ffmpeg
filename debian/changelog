@@ -29,6 +29,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     init_get_bits8() for failure   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/ec887b13a88afbaf44fb28c3045b
     da5d434da8dc.patch
+  * fix(cve): CVE-2026-125096 (medium) - avcodec/tiertexseqv: check the
+    RLE block unpacking before copying the block   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/c896bbb24535685509a816af0966
+    5cb73bf2d0c7.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
