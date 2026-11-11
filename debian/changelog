@@ -128,6 +128,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/50e9ef29be1766404115b0a4908f
     a3fd6ed7fa3f
 
+  * fix(cve): CVE-2026-125197 (medium) - avcodec/lcldec: check the
+    packet size before reading the ZLIB multithread header   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/12e5d4ec98b7add7bcac9d8131d9
+    a6dfb2549966
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
