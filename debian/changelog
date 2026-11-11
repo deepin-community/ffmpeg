@@ -34,6 +34,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     frame length larger than a frame   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/5d59b7c45d7142bddd13ddc8891e
     72c5c7dc991b.patch
+  * fix(cve): CVE-2026-125217 (medium) - avcodec/roqaudioenc: encode the
+    buffered samples when flushed early   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/f71410e0288f0c40ae2fb5e5a4d7
+    428763d08a71
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
