@@ -30,6 +30,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     without a preceding SOI when a hwaccel is used   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/f58a6776546567367baf5223df9f
     fbfd289299f8
+  * fix(cve): CVE-2026-125171 (medium) - avcodec/mpc7: reject a last
+    frame length larger than a frame   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/5d59b7c45d7142bddd13ddc8891e
+    72c5c7dc991b.patch
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
