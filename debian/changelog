@@ -41,6 +41,10 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     samples of a mono ADPCM_MS block with trellis   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/fb13409aaffc151f602ad357db46
     052e98ea46e8
+  * fix(cve): CVE-2026-125198 (low) - avcodec/mediacodec_wrapper: avoid
+    leaking setBuffer backing storage   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/e5d295b3cd467fc713300e208ba2
+    dacc7ff603a0.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 03:37:25 +0800
 
