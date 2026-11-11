@@ -18,6 +18,10 @@ ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
     interleaved scans with more than 8 bits   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/60bc31fcf6543505e6d2fc1a9399
     cca95f54ba4d
+  * fix(cve): CVE-2026-125234 (medium) - avcodec/wavpackenc: compute the
+    default block size in 64 bit   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/e621da8ecdbef8edb8336cc899b9
+    62159dc2465c.patch
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 23 Oct 2026 23:31:19 +0800
 
