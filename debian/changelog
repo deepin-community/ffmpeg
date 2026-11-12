@@ -1,3 +1,13 @@
+ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
+
+  * Add slice param of vaapi-hevc (port from V20 release/eagle)
+    - Add num_entry_point_offsets field assignment in
+      vaapi_hevc_decode_slice() for VASliceParameterBufferHEVC
+    - Improves VAAPI HEVC hardware decoding compatibility with
+      streams using multiple entry points (e.g. WPP parallel encoding)
+
+ -- zhangtingan <zhangtingan@uniontech.com>  Thu, 12 Nov 2026 19:50:00 +0800
+
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
 
   * fix(build): add gzip -n to PTX compression for reproducible builds
