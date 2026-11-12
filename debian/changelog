@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-125224 (medium) - avcodec/vorbis_parser: parse
+    the extradata only once   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/90f5e61a1da2dcc0050169af8ca5
+    93530f26071b
+
+ -- deepin-ci-robot <packages@deepin.org>  Thu, 12 Nov 2026 15:11:12 +0800
+
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
 
   * fix(build): add gzip -n to PTX compression for reproducible builds
