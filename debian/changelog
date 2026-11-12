@@ -229,6 +229,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     04891eb60290,https://github.com/FFmpeg/FFmpeg/commit/cfb40c912927fdd
     2c1186b7b6aca468422da23db
 
+  * fix(cve): CVE-2026-125205 (medium) - avcodec/av1_frame_merge_bsf:
+    check that the number of Obus are within a limit   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/c90bbc2036bac67e95777638bdc8
+    6157a775858a
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
