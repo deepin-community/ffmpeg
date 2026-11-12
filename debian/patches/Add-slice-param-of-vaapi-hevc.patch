@@ -1,0 +1,27 @@
+From: zhangtingan <zhangtingan@uniontech.com>
+Date: Thu, 12 Nov 2026 19:50:00 +0800
+Subject: Add slice param of vaapi-hevc
+
+Add num_entry_point_offsets field assignment to the VASliceParameterBufferHEVC
+structure initialization in vaapi_hevc_decode_slice(). This passes the entry
+point offset count to the VAAPI HEVC hardware decoder, improving compatibility
+with HEVC streams that use multiple entry points (e.g. WPP parallel encoding).
+
+Port from V20 release/eagle branch (upstream commit df88b4ca,
+Change-Id: Ie812214e541641df2f668e82c0e26cad3aaa0f16).
+---
+ libavcodec/vaapi_hevc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/libavcodec/vaapi_hevc.c b/libavcodec/vaapi_hevc.c
+index 9d668eb55e..cece7a3c3b 100644
+--- a/libavcodec/vaapi_hevc.c
++++ b/libavcodec/vaapi_hevc.c
+@@ -498,6 +498,7 @@ static int vaapi_hevc_decode_slice(AVCodecContext *avctx,
+         .num_ref_idx_l0_active_minus1  = sh->nb_refs[L0] ? sh->nb_refs[L0] - 1 : 0,
+         .num_ref_idx_l1_active_minus1  = sh->nb_refs[L1] ? sh->nb_refs[L1] - 1 : 0,
+ 
++        .num_entry_point_offsets       = sh->num_entry_point_offsets,
++
+         .LongSliceFlags.fields = {
+             .dependent_slice_segment_flag                 = sh->dependent_slice_segment_flag,
