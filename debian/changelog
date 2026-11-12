@@ -279,6 +279,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/92b318e0b33623720d9f128ad7bc
     5fa8277c34f7.patch
 
+  * fix(cve): CVE-2026-125255 (medium) - avcodec/mjpegdec: reject a SOF
+    without a preceding SOI when a hwaccel is used   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/f58a6776546567367baf5223df9f
+    fbfd289299f8
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
