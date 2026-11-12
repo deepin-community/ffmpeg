@@ -381,6 +381,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     49b03c1115dd,https://github.com/FFmpeg/FFmpeg/commit/ad2287d6d2511af
     66222e8f7e40d546bc8d461ec
 
+  * fix(cve): CVE-2026-125071 (medium) - avcodec/jvdec: check
+    init_get_bits8() for failure   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/839c93f261cd3e1719edfac4244a
+    2d0055ce8841
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
