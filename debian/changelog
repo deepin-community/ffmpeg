@@ -218,6 +218,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/16d0f7f408ba47b4091a22109d4f
     22f5fd57820a
 
+  * fix(cve): CVE-2026-125242 (medium) - avcodec/vdpau: free the
+    bitstream buffer table when the picture is released   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/2c6cd8098844f2367f8ba0a3a483
+    e405c8f76449.patch
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
