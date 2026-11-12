@@ -264,6 +264,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/6280907da48c4dd78f95ef5c713a
     29c7702153a3.patch
 
+  * fix(cve): CVE-2026-125099 (medium) - avcodec/gemdec: clear the row
+    buffer before decoding   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/e578999fa3c5f7efac1ea70bb7c2
+    a7682013c7c9.patch
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
