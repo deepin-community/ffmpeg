@@ -304,6 +304,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/c6e5b6105aa13f6b0df2a646da60
     8078cfe52d79.patch
 
+  * fix(cve): CVE-2026-125177 (medium) - avcodec/mscc: allocate the RLE
+    buffer with av_mallocz to avoid heap disclosure   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/263a85e2a2127396f8a2b0c329ec
+    798e1ea015ad
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
