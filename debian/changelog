@@ -320,6 +320,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/03cd7851955c023f1ff4c8a495d4
     7e996d01485a.patch
 
+  * fix(cve): CVE-2026-125095 (medium) - avcodec/c93: fail on truncated
+    color tables   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/ac0106851a4dac555c967421dfc9
+    6c0135183133
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
