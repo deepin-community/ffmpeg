@@ -309,6 +309,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/263a85e2a2127396f8a2b0c329ec
     798e1ea015ad
 
+  * fix(cve): CVE-2026-125192 (medium) - avcodec/dxa: allocate the
+    decompression buffer zeroed   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/a6e5d5ff993a525933d8d8f29071
+    eb6c74b0436a
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
