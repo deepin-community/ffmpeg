@@ -203,6 +203,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/968e9e948ed8c9ba90dbc875e60b
     843c755cf4ba
 
+  * fix(cve): CVE-2026-125216 (medium) - avcodec/dpxenc: reject
+    unsupported depths for RGB48 input   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/aa5fd7d287db4f469fdcbe444f7f
+    9f38c8c289c7.patch
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
