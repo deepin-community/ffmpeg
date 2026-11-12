@@ -390,6 +390,13 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     the extradata only once   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/90f5e61a1da2dcc0050169af8ca5
     93530f26071b
+  * fix(cve): CVE-2026-125252 (medium) - avcodec/vaapi_decode: destroy
+    the buffers of a picture released without being issued; avcodec:
+    release the hwaccel picture private data before its frame
+    Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/4221a63ce869ade862557ca64693
+    bf77f5032971,https://github.com/FFmpeg/FFmpeg/commit/838c660bb3cd66b
+    a74981b453c14c79214f6ef92
 
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
