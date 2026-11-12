@@ -360,6 +360,11 @@ ffmpeg (7:6.1.5-0deepin13) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/bc896c613ec0d4ad0108d62fbdda
     0196f69e7121
 
+  * fix(cve): CVE-2026-125195 (low) - avcodec/adpcmenc: encode all
+    samples of a mono ADPCM_MS block with trellis   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/fb13409aaffc151f602ad357db46
+    052e98ea46e8
+
  -- deepin-ci-robot <packages@deepin.org>  Thu, 29 Oct 2026 15:30:09 +0800
 
 ffmpeg (7:6.1.5-0deepin12) unstable; urgency=medium
