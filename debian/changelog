@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin16) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-125203 (high) - avcodec/cook: require the channel
+    mask to cover every subpacket channel   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/3e09f5e24eb277a6d011745ff03e
+    602f61c5c171
+
+ -- deepin-ci-robot <packages@deepin.org>  Mon, 23 Nov 2026 14:05:00 +0800
+
 ffmpeg (7:6.1.5-0deepin15) unstable; urgency=medium
 
   * Fix the truncated Add-slice-param-of-vaapi-hevc quilt patch so the
