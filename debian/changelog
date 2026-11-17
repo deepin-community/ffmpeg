@@ -9,6 +9,10 @@ ffmpeg (7:6.1.5-0deepin16) unstable; urgency=medium
     https://github.com/FFmpeg/FFmpeg/commit/63958ce2b5dd1b22f534fc968c86
     329cbbceef07,https://github.com/FFmpeg/FFmpeg/commit/e15ddb7f9a2f9b3
     ab8ac305efb6f94ddc18463d0
+  * fix(cve): CVE-2026-125228 (medium) - avcodec/vorbisenc: dont assert
+    on non finite input   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/e33548ad13fd3495466a651792e8
+    206b1c6f7fd7
 
  -- deepin-ci-robot <packages@deepin.org>  Mon, 23 Nov 2026 14:05:00 +0800
 
