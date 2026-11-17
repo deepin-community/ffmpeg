@@ -1,3 +1,10 @@
+ffmpeg (7:6.1.5-0deepin15) unstable; urgency=medium
+
+  * Fix the truncated Add-slice-param-of-vaapi-hevc quilt patch so the
+    source package applies cleanly
+
+ -- zhangtingan <zhangtingan@uniontech.com>  Tue, 17 Nov 2026 21:20:00 +0800
+
 ffmpeg (7:6.1.5-0deepin14) unstable; urgency=medium
 
   * Add slice param of vaapi-hevc (port from V20 release/eagle)
