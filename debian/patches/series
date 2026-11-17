@@ -121,3 +121,4 @@ CVE-2026-125224.patch
 CVE-2026-125252.patch
 Add-slice-param-of-vaapi-hevc.patch
 CVE-2026-125203.patch
+CVE-2026-125267.patch
