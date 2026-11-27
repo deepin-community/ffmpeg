@@ -1,3 +1,17 @@
+ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-135736 (high) - avfilter/vf_deband: reject the
+    coupling command for subsampled formats   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/24ad423d908cd595c983b6c503ddb0
+    ee94901ba2
+  * The runtime "coupling" option was accepted for pixel formats with chroma
+    subsampling and process_command() re-ran config_input() without a format
+    check, so the coupling kernels indexed the smaller chroma planes with
+    luma dimensions. Reject the command and reset coupling when a chroma
+    shift is set.
+
+ -- majiuping <majiuping@uniontech.com>  Thu, 26 Nov 2026 21:10:00 +0800
+
 ffmpeg (7:6.1.5-0deepin16) unstable; urgency=medium
 
   * fix(cve): CVE-2026-125203 (high) - avcodec/cook: require the channel
