@@ -21,6 +21,10 @@ ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
     scanline padding from the frame   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/f26d201dd87f36e89ab77b5f6897
     65604c9b06bc
+  * fix(cve): CVE-2026-137909 (medium) - avcodec/xsubenc: reject
+    subtitles without rectangles   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/c4a4d5f72a7d89de23043415a0a4
+    5090c51c502a
 
  -- majiuping <majiuping@uniontech.com>  Thu, 26 Nov 2026 21:10:00 +0800
 
