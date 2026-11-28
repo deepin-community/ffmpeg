@@ -13,6 +13,10 @@ ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
     tracks with no resources   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/9473f54c3673b175e2273b07d614
     49c1ee019eb4
+  * fix(cve): CVE-2026-137905 (medium) - avformat/imfdec: check for a
+    missing or empty Path in the asset map   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/0fe4bd4b435b1de950890d37b1e4
+    df7bae3655b1
 
  -- majiuping <majiuping@uniontech.com>  Thu, 26 Nov 2026 21:10:00 +0800
 
