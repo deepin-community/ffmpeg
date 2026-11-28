@@ -29,6 +29,10 @@ ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
     the input frame when eb_send_frame() fails   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/c67ac1bc34440829de4ef3b9d152
     06bb095eed11
+  * fix(cve): CVE-2026-137910 (medium) - avcodec/pcxenc: do not read the
+    scanline padding from the frame   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/b47e96b4eb50fef52cf1a9c7b010
+    0a34cc05cce0
 
  -- majiuping <majiuping@uniontech.com>  Thu, 26 Nov 2026 21:10:00 +0800
 
