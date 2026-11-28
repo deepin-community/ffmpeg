@@ -9,6 +9,10 @@ ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
     check, so the coupling kernels indexed the smaller chroma planes with
     luma dimensions. Reject the command and reset coupling when a chroma
     shift is set.
+  * fix(cve): CVE-2026-137906 (medium) - avformat/imfdec: reject virtual
+    tracks with no resources   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/9473f54c3673b175e2273b07d614
+    49c1ee019eb4
 
  -- majiuping <majiuping@uniontech.com>  Thu, 26 Nov 2026 21:10:00 +0800
 
