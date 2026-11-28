@@ -17,6 +17,10 @@ ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
     missing or empty Path in the asset map   Upstream:
     https://github.com/FFmpeg/FFmpeg/commit/0fe4bd4b435b1de950890d37b1e4
     df7bae3655b1
+  * fix(cve): CVE-2026-137911 (medium) - avcodec/xwdenc: do not read the
+    scanline padding from the frame   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/f26d201dd87f36e89ab77b5f6897
+    65604c9b06bc
 
  -- majiuping <majiuping@uniontech.com>  Thu, 26 Nov 2026 21:10:00 +0800
 
