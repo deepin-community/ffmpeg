@@ -1,3 +1,12 @@
+ffmpeg (7:6.1.5-0deepin18) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-137907 (high) - avfilter/boxblur: reject pixel
+    formats deeper than 16 bits   Upstream:
+    https://github.com/FFmpeg/FFmpeg/commit/4fd35f8cd2ee197f12c01ace4649
+    b2210556eec1
+
+ -- deepin-ci-robot <packages@deepin.org>  Sat, 28 Nov 2026 12:04:39 +0800
+
 ffmpeg (7:6.1.5-0deepin17) unstable; urgency=medium
 
   * fix(cve): CVE-2026-135736 (high) - avfilter/vf_deband: reject the
